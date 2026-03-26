@@ -1,0 +1,130 @@
+loadstring([[
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+-- GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+local open = Instance.new("TextButton", gui)
+open.Size = UDim2.new(0,60,0,60)
+open.Position = UDim2.new(0.05,0,0.4,0)
+open.Text = "VIP"
+open.BackgroundColor3 = Color3.fromRGB(0,170,255)
+open.Draggable = true
+Instance.new("UICorner", open).CornerRadius = UDim.new(1,0)
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0,300,0,200)
+main.Position = UDim2.new(0.3,0,0.3,0)
+main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.Visible = false
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main)
+
+local toggle = Instance.new("TextButton", main)
+toggle.Size = UDim2.new(0,200,0,40)
+toggle.Position = UDim2.new(0,50,0,80)
+toggle.Text = "Auto VIP: OFF"
+toggle.BackgroundColor3 = Color3.fromRGB(70,70,70)
+
+local running = false
+
+toggle.MouseButton1Click:Connect(function()
+	running = not running
+	toggle.Text = "Auto VIP: "..(running and "ON" or "OFF")
+end)
+
+open.MouseButton1Click:Connect(function()
+	main.Visible = not main.Visible
+end)
+
+-- ISLANDS
+local islands = {
+	CFrame.new(-1600, 10, 150),
+	CFrame.new(1100, 10, -1400),
+	CFrame.new(-5200, 10, 8500),
+	CFrame.new(-4800, 700, -2600),
+	CFrame.new(-7900, 5500, -380),
+	CFrame.new(-7900, 5600, -1400),
+}
+
+local islandIndex = 1
+
+-- FIX RUNG (ANTI SPAM)
+local moving = false
+
+function tweenTo(cf)
+	if moving then return end
+	moving = true
+
+	local dist = (root.Position - cf.Position).Magnitude
+	local speed = 200
+
+	local tween = TweenService:Create(
+		root,
+		TweenInfo.new(dist/speed, Enum.EasingStyle.Linear),
+		{CFrame = cf}
+	)
+
+	tween:Play()
+	tween.Completed:Wait()
+
+	moving = false
+end
+
+-- LẤY RƯƠNG
+function getChests()
+	local list = {}
+
+	for _,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("BasePart") and string.find(v.Name:lower(),"chest") then
+			table.insert(list, v)
+		end
+	end
+
+	return list
+end
+
+-- LOOP CHÍNH (CHUẨN VIP)
+spawn(function()
+	while true do
+		task.wait(0.2)
+
+		if running then
+			
+			-- ✈️ 1. TWEEN TỚI ĐẢO
+			tweenTo(islands[islandIndex])
+
+			-- ⏱️ 2. ĐỢI 4 GIÂY
+			task.wait(4)
+
+			-- 📦 3. NHẶT RƯƠNG
+			local chests = getChests()
+
+			for _,chest in pairs(chests) do
+				if chest and chest.Parent then
+					root.CFrame = chest.CFrame + Vector3.new(0,3,0)
+					task.wait(0.9)
+				end
+			end
+
+			-- ⏱️ 4. ĐỢI 5 GIÂY
+			task.wait(5)
+
+			-- ➡️ 5. QUA ĐẢO TIẾP
+			islandIndex = islandIndex + 1
+			if islandIndex > #islands then
+				islandIndex = 1
+			end
+		end
+	end
+end)
+
+]])()
