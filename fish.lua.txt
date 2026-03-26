@@ -1,0 +1,55 @@
+-- Auto Fishing Script
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+local UIS = game:GetService("UserInputService")
+
+-- GUI đơn giản
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+local toggleBtn = Instance.new("TextButton", gui)
+toggleBtn.Size = UDim2.new(0,120,0,50)
+toggleBtn.Position = UDim2.new(0.05,0,0.5,-25)
+toggleBtn.Text = "Auto Fish OFF"
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextScaled = true
+
+local running = false
+toggleBtn.MouseButton1Click:Connect(function()
+	running = not running
+	toggleBtn.Text = running and "Auto Fish ON" or "Auto Fish OFF"
+end)
+
+-- Hàm kiểm tra mồi cá
+local function isFishingSpot(obj)
+	-- Giả sử các điểm câu cá tên có "FishingSpot" trong workspace
+	return obj:IsA("BasePart") and string.find(obj.Name,"FishingSpot")
+end
+
+-- Loop tự động câu cá
+spawn(function()
+	while true do
+		task.wait(0.2)
+		if running then
+			-- Lấy các điểm câu cá trong workspace
+			for _,spot in pairs(workspace:GetDescendants()) do
+				if isFishingSpot(spot) then
+					-- Dịch chuyển đến gần điểm câu
+					player.Character.HumanoidRootPart.CFrame = spot.CFrame + Vector3.new(0,3,0)
+					task.wait(0.5)
+					
+					-- Click chuột phải để ném cần
+					mouse1click = mouse1click or mouse
+					mouse1click:Click()
+					
+					-- Chờ một chút, giả lập câu cá
+					task.wait(1)
+					
+					-- Lặp lại đến điểm tiếp theo
+				end
+			end
+		end
+	end
+end)
