@@ -1,0 +1,120 @@
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+-- =================
+-- MENU TRÒN NHỎ
+-- =================
+local menu = Instance.new("Frame", gui)
+menu.Size = UDim2.new(0,50,0,50)
+menu.Position = UDim2.new(0.05,0,0.5,-25)
+menu.AnchorPoint = Vector2.new(0,0.5)
+menu.BackgroundColor3 = Color3.fromRGB(0,170,255)
+menu.Active = true
+menu.Draggable = true
+local corner = Instance.new("UICorner", menu)
+corner.CornerRadius = UDim.new(1,0)
+
+-- NÚT ON/OFF
+local toggle = Instance.new("TextButton", menu)
+toggle.Size = UDim2.new(1,0,1,0)
+toggle.Text = "OFF"
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.Font = Enum.Font.GothamBold
+toggle.BackgroundTransparency = 1
+toggle.TextScaled = true
+
+local running = false
+toggle.MouseButton1Click:Connect(function()
+	running = not running
+	toggle.Text = running and "ON" or "OFF"
+
+	if running then
+		-- 🔥 CINEMATIC: Hiệu ứng chữ “Fix Lag”
+		local label = Instance.new("TextLabel", gui)
+		label.Size = UDim2.new(0,400,0,100)
+		label.Position = UDim2.new(0.5,-200,0.4,0)
+		label.AnchorPoint = Vector2.new(0.5,0.5)
+		label.BackgroundTransparency = 1
+		label.Font = Enum.Font.GothamBold
+		label.Text = "Fix Lag"
+		label.TextColor3 = Color3.new(1,1,1)
+		label.TextScaled = true
+
+		-- Tạo ánh sáng glow
+		local lightEffect = Instance.new("PointLight", label)
+		lightEffect.Color = Color3.fromRGB(255,255,255)
+		lightEffect.Brightness = 5
+		lightEffect.Range = 15
+
+		-- Tween mờ dần
+		TweenService:Create(label, TweenInfo.new(2), {TextTransparency = 1}):Play()
+		TweenService:Create(lightEffect, TweenInfo.new(2), {Brightness = 0}):Play()
+
+		-- Destroy sau 2.5 giây
+		delay(2.5,function()
+			label:Destroy()
+		end)
+
+		-- =================
+		-- FIX LAG EXTREME ẨN HIỆU ỨNG
+		-- =================
+		-- Ẩn người chơi khác
+		for _,p in pairs(Players:GetPlayers()) do
+			if p ~= player and p.Character then
+				for _,part in pairs(p.Character:GetDescendants()) do
+					if part:IsA("BasePart") then
+						part.Transparency = 1
+						part.CanCollide = false
+					end
+				end
+			end
+		end
+
+		-- Ẩn hầu hết hiệu ứng
+		for _,v in pairs(workspace:GetDescendants()) do
+			local isPlayer = v:IsDescendantOf(player.Character)
+			local isBoss = v.Name:lower():find("boss")
+			if not isPlayer and not isBoss then
+				if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") then
+					v.Enabled = false
+				end
+				if v:IsA("Texture") or v:IsA("Decal") then
+					v.Transparency = 1
+				end
+			end
+		end
+
+		-- Giảm ánh sáng & tối ưu FPS
+		Lighting.Brightness = Lighting.Brightness * 0.8
+		Lighting.GlobalShadows = false
+		Lighting.FogEnd = 100000
+		print("✅ FIX LAG EXTREME ON: ẩn người chơi, 90% hiệu ứng, FPS tối ưu")
+	else
+		-- Reset trở lại
+		for _,p in pairs(Players:GetPlayers()) do
+			if p.Character then
+				for _,part in pairs(p.Character:GetDescendants()) do
+					if part:IsA("BasePart") then
+						part.Transparency = 0
+						part.CanCollide = true
+					end
+				end
+			end
+		end
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") then
+				v.Enabled = true
+			elseif v:IsA("Texture") or v:IsA("Decal") then
+				v.Transparency = 0
+			end
+		end
+		Lighting.Brightness = Lighting.Brightness / 0.8
+		Lighting.GlobalShadows = true
+		Lighting.FogEnd = 1000
+		print("✅ FIX LAG EXTREME OFF: restore game")
+	end
+end)
