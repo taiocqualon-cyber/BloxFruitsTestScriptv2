@@ -1,0 +1,110 @@
+repeat task.wait() until game:IsLoaded()
+
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local workspace = game:GetService("Workspace")
+
+-- ================= UI TEXT =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local label = Instance.new("TextLabel", gui)
+label.Size = UDim2.new(0,300,0,50)
+label.Position = UDim2.new(0.5,-150,0.1,0)
+label.BackgroundTransparency = 0.3
+label.BackgroundColor3 = Color3.fromRGB(0,0,0)
+label.TextColor3 = Color3.new(1,1,1)
+label.TextScaled = true
+label.Text = "🔄 Đang quét trái..."
+
+-- ================= CHECK TRÁI =================
+local function isFruit(v)
+	return v:IsA("Tool") and v:FindFirstChild("Handle") and v.Name:lower():find("fruit")
+end
+
+-- ================= GIÁ =================
+local function getPrice(v)
+	local name = v.Name:lower()
+
+	if name:find("kitsune") then return 8000000 end
+	if name:find("dragon") or name:find("tiger") then return 5000000 end
+	if name:find("dough") or name:find("venom") then return 3000000 end
+	if name:find("spirit") or name:find("control") then return 3200000 end
+	
+	return 1000000
+end
+
+-- ================= ESP =================
+local function createESP(fruit)
+	if fruit:FindFirstChild("FruitESP") then return end
+	
+	local esp = Instance.new("BillboardGui")
+	esp.Name = "FruitESP"
+	esp.Size = UDim2.new(0,120,0,40)
+	esp.AlwaysOnTop = true
+	esp.Adornee = fruit.Handle
+	esp.StudsOffset = Vector3.new(0,2,0)
+
+	local dot = Instance.new("Frame", esp)
+	dot.Size = UDim2.new(0,12,0,12)
+	dot.Position = UDim2.new(0.5,-6,0,0)
+	dot.BorderSizePixel = 0
+	Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
+
+	local text = Instance.new("TextLabel", esp)
+	text.Size = UDim2.new(1,0,0,20)
+	text.Position = UDim2.new(0,0,0,14)
+	text.BackgroundTransparency = 1
+	text.TextScaled = true
+	text.TextStrokeTransparency = 0
+	text.TextColor3 = Color3.new(1,1,1)
+
+	local price = getPrice(fruit)
+
+	-- màu
+	if price < 2000000 then
+		dot.BackgroundColor3 = Color3.fromRGB(255,255,255)
+	elseif price < 3000000 then
+		dot.BackgroundColor3 = Color3.fromRGB(170,0,255)
+	elseif price < 5000000 then
+		dot.BackgroundColor3 = Color3.fromRGB(255,255,0)
+	else
+		dot.BackgroundColor3 = Color3.fromRGB(255,0,0)
+	end
+
+	esp.Parent = fruit
+
+	task.spawn(function()
+		while fruit.Parent do
+			task.wait(0.2)
+			local char = player.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local dist = (fruit.Handle.Position - char.HumanoidRootPart.Position).Magnitude
+				text.Text = "🍏 Fruits Blox - "..math.floor(dist).."m"
+			end
+		end
+	end)
+end
+
+-- ================= QUÉT =================
+local found = false
+
+for _,v in pairs(workspace:GetDescendants()) do
+	if isFruit(v) then
+		found = true
+		createESP(v)
+	end
+end
+
+-- ================= KẾT QUẢ =================
+if found then
+	label.Text = "✅ Có trái trong server"
+else
+	label.Text = "❌ Không có trái → đổi server"
+
+	task.wait(2)
+
+	-- 🔁 ĐỔI SERVER
+	TeleportService:Teleport(game.PlaceId)
+end
