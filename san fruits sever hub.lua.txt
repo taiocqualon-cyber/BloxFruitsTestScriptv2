@@ -1,0 +1,105 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+
+-- ================= UI =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local label = Instance.new("TextLabel", gui)
+label.Size = UDim2.new(0,320,0,50)
+label.Position = UDim2.new(0.5,-160,0.1,0)
+label.BackgroundTransparency = 0.3
+label.BackgroundColor3 = Color3.fromRGB(0,0,0)
+label.TextColor3 = Color3.new(1,1,1)
+label.TextScaled = true
+label.Text = "🔍 Đang tìm trái..."
+
+-- ================= CHECK TRÁI =================
+local function isFruit(v)
+	return v:IsA("Tool") and v:FindFirstChild("Handle") and v.Name:lower():find("fruit")
+end
+
+-- ================= GIÁ =================
+local function getPrice(v)
+	local name = v.Name:lower()
+
+	if name:find("kitsune") then return 8000000 end
+	if name:find("dragon") or name:find("tiger") then return 5000000 end
+	if name:find("dough") or name:find("venom") then return 3000000 end
+	if name:find("spirit") or name:find("control") then return 3200000 end
+	
+	return 1000000
+end
+
+-- ================= TWEEN =================
+local function tweenTo(pos)
+	local char = player.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+	
+	local root = char.HumanoidRootPart
+	
+	local tween = TweenService:Create(root, TweenInfo.new(
+		(root.Position - pos).Magnitude / 200, 
+		Enum.EasingStyle.Linear
+	), {CFrame = CFrame.new(pos)})
+	
+	tween:Play()
+end
+
+-- ================= TÌM TRÁI XỊN =================
+local function findBestFruit()
+	local bestFruit = nil
+	local bestPrice = 0
+	
+	for _,v in pairs(workspace:GetDescendants()) do
+		if isFruit(v) then
+			local price = getPrice(v)
+			
+			if price > bestPrice then
+				bestPrice = price
+				bestFruit = v
+			end
+		end
+	end
+	
+	return bestFruit, bestPrice
+end
+
+-- ================= MAIN =================
+while true do
+	task.wait(2)
+
+	local fruit, price = findBestFruit()
+
+	if fruit and price >= 1900000 then
+		label.Text = "🎯 Có trái xịn → đang bay..."
+
+		-- ESP đơn giản
+		if not fruit:FindFirstChild("ESP") then
+			local esp = Instance.new("BillboardGui", fruit)
+			esp.Size = UDim2.new(0,100,0,40)
+			esp.Adornee = fruit.Handle
+			esp.AlwaysOnTop = true
+			
+			local text = Instance.new("TextLabel", esp)
+			text.Size = UDim2.new(1,0,1,0)
+			text.BackgroundTransparency = 1
+			text.TextScaled = true
+			text.Text = "🍏 Fruits"
+			text.TextColor3 = Color3.new(1,1,1)
+		end
+
+		-- bay tới
+		tweenTo(fruit.Handle.Position)
+
+	else
+		label.Text = "❌ Không có trái xịn → đổi server"
+		task.wait(2)
+		TeleportService:Teleport(game.PlaceId)
+	end
+end
