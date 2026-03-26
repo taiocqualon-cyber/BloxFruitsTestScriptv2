@@ -1,0 +1,81 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local texts = {}
+local fruits = {}
+
+-- ================= DANH SÁCH TRÁI XỊN =================
+local priorityFruits = {
+	["blizzard"]=true,["dough"]=true,["tiger"]=true,
+	["kitsune"]=true,["portal"]=true,["venom"]=true,
+	["spirit"]=true,["gravity"]=true,["t-rex"]=true,
+	["mammoth"]=true,["control"]=true,["yeti"]=true,
+	["buddha"]=true,["pain"]=true,["gas"]=true,
+}
+
+-- ================= CHECK =================
+local function isFruit(v)
+	local name = v.Name:lower()
+	for k in pairs(priorityFruits) do
+		if name:find(k) then return true end
+	end
+end
+
+-- ================= QUÉT CHẬM (ANTI LAG) =================
+task.spawn(function()
+	while true do
+		task.wait(2) -- ⚡ giảm lag cực mạnh
+		
+		fruits = {} -- reset
+		
+		for _,v in pairs(workspace:GetDescendants()) do
+			if isFruit(v) and (v:IsA("Tool") or v:IsA("BasePart")) then
+				table.insert(fruits, v)
+			end
+		end
+	end
+end)
+
+-- ================= ESP NHẸ =================
+task.spawn(function()
+	while true do
+		task.wait(0.3) -- không phải mỗi frame
+		
+		local char = player.Character
+		if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
+		
+		local root = char.HumanoidRootPart.Position
+		
+		for _,v in pairs(fruits) do
+			
+			local pos = nil
+			if v:IsA("Tool") and v:FindFirstChild("Handle") then
+				pos = v.Handle.Position
+			elseif v:IsA("BasePart") then
+				pos = v.Position
+			end
+			
+			if pos then
+				local dist = (pos - root).Magnitude
+				
+				if not texts[v] then
+					local parent = v:IsA("Tool") and v:FindFirstChild("Handle") or v
+					
+					local bill = Instance.new("BillboardGui", parent)
+					bill.Size = UDim2.new(0,150,0,40)
+					bill.AlwaysOnTop = true
+					
+					local txt = Instance.new("TextLabel", bill)
+					txt.Size = UDim2.new(1,0,1,0)
+					txt.BackgroundTransparency = 1
+					txt.TextColor3 = Color3.fromRGB(255,0,0)
+					txt.TextScaled = true
+					
+					texts[v] = txt
+				end
+				
+				texts[v].Text = v.Name.." - "..math.floor(dist).."m"
+			end
+		end
+	end
+end)
