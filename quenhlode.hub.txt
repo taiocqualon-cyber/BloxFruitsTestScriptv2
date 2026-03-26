@@ -1,0 +1,150 @@
+loadstring([[
+repeat task.wait() until game:IsLoaded()
+local Players,Workspace,ReplicatedStorage,TweenService=game:GetService("Players"),game:GetService("Workspace"),game:GetService("ReplicatedStorage"),game:GetService("TweenService")
+local player,char=Players.LocalPlayer,Players.LocalPlayer.Character or Players.LocalPlayer.CharacterAdded:Wait()
+local root,char=char:WaitForChild("HumanoidRootPart"),char
+local humanoid=char:WaitForChild("Humanoid")
+local meleeRemote=ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("meleeEvent")
+
+local attackInterval=0.05
+local attackDistance=3
+local autoAttack=false
+local targetPlayer=nil
+
+-- ===== GUI chính =====
+local ScreenGui=Instance.new("ScreenGui",game.CoreGui)
+
+-- nút tròn mở menu
+local OpenBtn=Instance.new("ImageButton",ScreenGui)
+OpenBtn.Size=UDim2.new(0,60,0,60)
+OpenBtn.Position=UDim2.new(0.1,0,0.2,0)
+OpenBtn.BackgroundTransparency=1
+OpenBtn.Image="rbxassetid://YOUR_IMAGE_ID" -- 🔥 thay bằng ID ảnh bạn muốn
+OpenBtn.Draggable=true
+Instance.new("UICorner",OpenBtn).CornerRadius=UDim.new(1,0)
+
+-- frame menu
+local Main=Instance.new("Frame",ScreenGui)
+Main.Size=UDim2.new(0,320,0,300)
+Main.Position=UDim2.new(0.5,-160,0.5,-150)
+Main.BackgroundColor3=Color3.fromRGB(30,30,30)
+Main.Active=true
+Main.Draggable=true
+Main.Visible=false
+Instance.new("UICorner",Main)
+
+-- ===== Tabs =====
+local Tabs={}
+local function createTab(name,posX)
+    local btn=Instance.new("TextButton",Main)
+    btn.Size=UDim2.new(0,100,0,30)
+    btn.Position=UDim2.new(0,posX,0,0)
+    btn.Text=name
+    btn.BackgroundColor3=Color3.fromRGB(70,70,70)
+    btn.TextColor3=Color3.new(1,1,1)
+    return btn
+end
+
+Tabs.Attack=createTab("Attack",0)
+Tabs.Setting=createTab("Setting",110)
+Tabs.Info=createTab("Info",220)
+
+-- ===== Pages =====
+local Pages={}
+local function createPage()
+    local f=Instance.new("Frame",Main)
+    f.Size=UDim2.new(1,0,1,-40)
+    f.Position=UDim2.new(0,0,0,40)
+    f.BackgroundTransparency=1
+    f.Visible=false
+    return f
+end
+
+Pages.Attack=createPage()
+Pages.Setting=createPage()
+Pages.Info=createPage()
+
+-- ===== Nội dung Attack =====
+local y=10
+local function addButton(page,text,callback)
+    local b=Instance.new("TextButton",page)
+    b.Size=UDim2.new(0,280,0,30)
+    b.Position=UDim2.new(0,20,0,y)
+    b.Text=text
+    b.BackgroundColor3=Color3.fromRGB(90,90,90)
+    b.TextColor3=Color3.new(1,1,1)
+    b.MouseButton1Click:Connect(callback)
+    y=y+35
+    return b
+end
+
+local toggleBtn=addButton(Pages.Attack,"Auto Attack: OFF",function()
+    autoAttack=not autoAttack
+    toggleBtn.Text="Auto Attack: "..(autoAttack and "ON" or "OFF")
+end)
+
+-- danh sách người chơi
+local function refreshPlayers()
+    for _,c in pairs(Pages.Attack:GetChildren()) do
+        if c.Name=="PlayerBtn" then c:Destroy() end
+    end
+    local py=50
+    for _,plr in pairs(Players:GetPlayers()) do
+        if plr~=player then
+            local b=Instance.new("TextButton",Pages.Attack)
+            b.Name="PlayerBtn"
+            b.Size=UDim2.new(0,280,0,30)
+            b.Position=UDim2.new(0,20,0,py)
+            py=py+35
+            b.Text=plr.Name
+            b.BackgroundColor3=Color3.fromRGB(100,100,100)
+            b.TextColor3=Color3.new(1,1,1)
+            b.MouseButton1Click:Connect(function() targetPlayer=plr end)
+        end
+    end
+end
+refreshPlayers()
+Players.PlayerAdded:Connect(refreshPlayers)
+Players.PlayerRemoving:Connect(refreshPlayers)
+
+-- ===== Nội dung Setting =====
+local labelS=Instance.new("TextLabel",Pages.Setting)
+labelS.Size=UDim2.new(1,0,1,0)
+labelS.Text="Tùy chỉnh tốc độ melee & khoảng cách attack trong code"
+labelS.TextColor3=Color3.new(1,1,1)
+labelS.BackgroundTransparency=1
+
+-- ===== Nội dung Info =====
+local labelI=Instance.new("TextLabel",Pages.Info)
+labelI.Size=UDim2.new(1,0,1,0)
+labelI.Text="Script Hub xịn | By bạn 😎"
+labelI.TextColor3=Color3.new(1,1,1)
+labelI.BackgroundTransparency=1
+
+-- ===== Chuyển tab =====
+local function showTab(name)
+    for i,v in pairs(Pages) do v.Visible=false end
+    Pages[name].Visible=true
+end
+
+Tabs.Attack.MouseButton1Click:Connect(function() showTab("Attack") end)
+Tabs.Setting.MouseButton1Click:Connect(function() showTab("Setting") end)
+Tabs.Info.MouseButton1Click:Connect(function() showTab("Info") end)
+
+showTab("Attack")
+
+-- ===== Mở menu =====
+OpenBtn.MouseButton1Click:Connect(function() Main.Visible=not Main.Visible end)
+
+-- ===== Auto attack =====
+spawn(function()
+    while true do
+        task.wait(0.05)
+        if autoAttack and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local tR=targetPlayer.Character.HumanoidRootPart
+            root.CFrame=tR.CFrame+Vector3.new(0,0,3)
+            if meleeRemote then meleeRemote:FireServer(tR.Position) end
+        end
+    end
+end)
+]])()
