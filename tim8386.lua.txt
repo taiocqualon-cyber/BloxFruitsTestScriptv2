@@ -1,22 +1,10 @@
+repeat task.wait() until game:IsLoaded()
+
 local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
-
 local player = Players.LocalPlayer
-local placeId = game.PlaceId
+local PlayerGui = player:WaitForChild("PlayerGui")
 
--- ================= GUI =================
-local gui = Instance.new("ScreenGui", player.PlayerGui)
-
-local hopBtn = Instance.new("TextButton", gui)
-hopBtn.Size = UDim2.new(0,220,0,60)
-hopBtn.Position = UDim2.new(0.5,-110,0.8,0)
-hopBtn.Text = "🔁 ĐỔI SERVER ÍT NGƯỜI"
-hopBtn.BackgroundColor3 = Color3.fromRGB(255,50,50)
-hopBtn.TextColor3 = Color3.new(1,1,1)
-hopBtn.Visible = false
-
--- ================= DANH SÁCH TRÁI XỊN =================
+-- ================= GIÁ TRÁI =================
 local fruitPrices = {
 	["dragon"]=3500000,
 	["tiger"]=5000000,
@@ -35,56 +23,88 @@ local fruitPrices = {
 	["gas"]=2100000,
 }
 
--- ================= CHECK TRÁI =================
-local function hasGoodFruit()
-	for _,v in pairs(workspace:GetDescendants()) do
-		local name = v.Name:lower()
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui", PlayerGui)
+
+local arrow = Instance.new("TextLabel", gui)
+arrow.Size = UDim2.new(0,300,0,50)
+arrow.Position = UDim2.new(0.5,-150,0.85,0)
+arrow.BackgroundTransparency = 1
+arrow.TextColor3 = Color3.fromRGB(0,255,0)
+arrow.TextScaled = true
+arrow.Text = "Scanning..."
+
+-- ================= SOUND =================
+local sound = Instance.new("Sound", gui)
+sound.SoundId = "rbxassetid://9118828563"
+sound.Volume = 1.5
+
+-- ================= CHECK =================
+local function getFruitValue(v)
+	local name = v.Name:lower()
+	for fruit,price in pairs(fruitPrices) do
+		if name == fruit or name:match("^"..fruit) then
+			return price
+		end
+	end
+end
+
+-- ================= LẤY VỊ TRÍ =================
+local function getPos(v)
+	if v:IsA("Tool") and v:FindFirstChild("Handle") then
+		return v.Handle.Position
+	elseif v:IsA("BasePart") then
+		return v.Position
+	end
+end
+
+local bestFruit = nil
+local bestPrice = 0
+
+-- ================= QUÉT CHẬM (ANTI LAG) =================
+task.spawn(function()
+	while true do
+		task.wait(2)
 		
-		for fruit,price in pairs(fruitPrices) do
-			if name == fruit or name:match("^"..fruit) then
-				if price >= 1900000 then
-					return true
-				end
+		bestFruit = nil
+		bestPrice = 0
+		
+		for _,v in pairs(workspace:GetDescendants()) do
+			local price = getFruitValue(v)
+			
+			if price and price > bestPrice then
+				bestPrice = price
+				bestFruit = v
 			end
 		end
-	end
-	return false
-end
-
--- ================= TÌM SERVER ÍT NGƯỜI =================
-local function getSmallServer()
-	local url = "https://games.roblox.com/v1/games/"..placeId.."/servers/Public?sortOrder=Asc&limit=100"
-	local servers = HttpService:JSONDecode(game:HttpGet(url))
-	
-	for _,v in pairs(servers.data) do
-		if v.playing < v.maxPlayers then
-			return v.id
-		end
-	end
-end
-
--- ================= CHECK SERVER =================
-task.spawn(function()
-	task.wait(10)
-	
-	if not hasGoodFruit() then
-		hopBtn.Visible = true
 		
-		game.StarterGui:SetCore("SendNotification", {
-			Title="FRUIT",
-			Text="❌ Không có trái xịn → đổi server",
-			Duration=5
-		})
+		if bestFruit then
+			sound:Play()
+		end
 	end
 end)
 
--- ================= CLICK HOP =================
-hopBtn.MouseButton1Click:Connect(function()
-	local serverId = getSmallServer()
-	
-	if serverId then
-		TeleportService:TeleportToPlaceInstance(placeId, serverId, player)
-	else
-		TeleportService:Teleport(placeId)
+-- ================= HIỂN THỊ =================
+task.spawn(function()
+	while true do
+		task.wait(0.3)
+		
+		local char = player.Character
+		if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
+		
+		local root = char.HumanoidRootPart.Position
+		
+		if bestFruit then
+			local pos = getPos(bestFruit)
+			
+			if pos then
+				local dist = (pos - root).Magnitude
+				
+				arrow.Text = "🎯 "..bestFruit.Name..
+				" ("..math.floor(bestPrice/1000000).."M) - "..math.floor(dist).."m"
+			end
+		else
+			arrow.Text = "❌ Không có trái xịn"
+		end
 	end
 end)
