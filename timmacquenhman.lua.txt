@@ -1,0 +1,188 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+local placeId = game.PlaceId
+
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui")
+gui.Parent = PlayerGui
+gui.ResetOnSpawn = false
+
+-- ===== FRAME KÉO =====
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,180,0,50)
+frame.Position = UDim2.new(0.02,0,0.5,0)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.Active = true
+frame.Draggable = true
+
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,0,1,0)
+status.BackgroundTransparency = 1
+status.TextColor3 = Color3.new(1,1,1)
+status.TextScaled = true
+status.Text = "Scanning..."
+
+-- ===== MŨI TÊN =====
+local arrow = Instance.new("TextLabel", gui)
+arrow.Size = UDim2.new(0,300,0,50)
+arrow.Position = UDim2.new(0.5,-150,0.85,0)
+arrow.BackgroundTransparency = 1
+arrow.TextColor3 = Color3.fromRGB(0,255,0)
+arrow.TextScaled = true
+arrow.ZIndex = 999
+arrow.Text = "..."
+
+-- ===== NÚT HOP =====
+local hopBtn = Instance.new("TextButton")
+hopBtn.Parent = gui
+hopBtn.Size = UDim2.new(0,220,0,60)
+hopBtn.Position = UDim2.new(0.5,-110,0.72,0)
+hopBtn.Text = "🔁 ĐỔI SERVER ÍT NGƯỜI"
+hopBtn.BackgroundColor3 = Color3.fromRGB(255,50,50)
+hopBtn.TextColor3 = Color3.new(1,1,1)
+hopBtn.TextScaled = true
+hopBtn.Visible = false
+hopBtn.ZIndex = 999
+
+Instance.new("UICorner", hopBtn)
+
+-- ===== SOUND =====
+local sound = Instance.new("Sound", gui)
+sound.SoundId = "rbxassetid://9118828563"
+sound.Volume = 1.5
+
+-- ================= GIÁ TRÁI =================
+local fruitPrices = {
+	["dragon"]=3500000,
+	["tiger"]=5000000,
+	["kitsune"]=8000000,
+	["dough"]=2800000,
+	["venom"]=3000000,
+	["spirit"]=3400000,
+	["control"]=3200000,
+	["shadow"]=2900000,
+	["t-rex"]=2700000,
+	["mammoth"]=2600000,
+	["gravity"]=2500000,
+	["blizzard"]=2400000,
+	["portal"]=1900000,
+	["pain"]=2300000,
+	["gas"]=2100000,
+}
+
+-- ================= CHECK =================
+local function getFruitValue(v)
+	local name = v.Name:lower()
+	for fruit,price in pairs(fruitPrices) do
+		if name == fruit or name:match("^"..fruit) then
+			return price
+		end
+	end
+end
+
+local function getPos(v)
+	if v:IsA("Tool") and v:FindFirstChild("Handle") then
+		return v.Handle.Position
+	elseif v:IsA("BasePart") then
+		return v.Position
+	end
+end
+
+-- ================= SERVER ÍT NGƯỜI =================
+local visited = {}
+
+local function getServer()
+	local url = "https://games.roblox.com/v1/games/"..placeId.."/servers/Public?sortOrder=Asc&limit=100"
+	local data = HttpService:JSONDecode(game:HttpGet(url))
+	
+	for _,v in pairs(data.data) do
+		if v.playing < v.maxPlayers and not visited[v.id] then
+			visited[v.id] = true
+			return v.id
+		end
+	end
+end
+
+-- ================= BIẾN =================
+local bestFruit = nil
+local bestPrice = 0
+
+-- ================= QUÉT =================
+task.spawn(function()
+	while true do
+		task.wait(2)
+
+		bestFruit = nil
+		bestPrice = 0
+		
+		for _,v in pairs(workspace:GetDescendants()) do
+			local price = getFruitValue(v)
+			
+			if price and price > bestPrice then
+				bestPrice = price
+				bestFruit = v
+			end
+		end
+		
+		if bestFruit ~= nil then
+			status.Text = "✅ Có trái"
+			hopBtn.Visible = false
+			sound:Play()
+		else
+			status.Text = "❌ Không có trái"
+			hopBtn.Visible = true
+		end
+	end
+end)
+
+-- ================= ARROW =================
+task.spawn(function()
+	while true do
+		task.wait(0.3)
+
+		local char = player.Character
+		if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
+		
+		local root = char.HumanoidRootPart.Position
+		
+		if bestFruit then
+			local pos = getPos(bestFruit)
+			
+			if pos then
+				local dist = (pos - root).Magnitude
+				
+				arrow.Text = "🎯 "..bestFruit.Name..
+				" ("..math.floor(bestPrice/1000000).."M) - "..math.floor(dist).."m"
+			end
+		else
+			arrow.Text = "❌ Không có trái"
+		end
+	end
+end)
+
+-- ================= FIX NÚT LUÔN HIỆN =================
+task.spawn(function()
+	while true do
+		task.wait(1)
+		if bestFruit == nil then
+			hopBtn.Visible = true
+		end
+	end
+end)
+
+-- ================= CLICK =================
+hopBtn.MouseButton1Click:Connect(function()
+	local id = getServer()
+	
+	if id then
+		TeleportService:TeleportToPlaceInstance(placeId, id, player)
+	else
+		TeleportService:Teleport(placeId)
+	end
+end)
