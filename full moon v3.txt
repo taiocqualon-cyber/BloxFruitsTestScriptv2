@@ -1,0 +1,94 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local player = Players.LocalPlayer
+
+-- ================= GUI NHỎ GỌN =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,120,0,60)
+frame.Position = UDim2.new(0.02,0,0.1,0)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.3
+frame.Active = true
+frame.Draggable = true
+
+local iconLabel = Instance.new("TextLabel", frame)
+iconLabel.Size = UDim2.new(1,0,1,0)
+iconLabel.BackgroundTransparency = 1
+iconLabel.TextScaled = true
+iconLabel.TextColor3 = Color3.new(1,1,1)
+iconLabel.Text = "🌘"
+
+-- ================= HOP SERVER =================
+local visited = {}
+local function hopServer()
+	local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+	local data = HttpService:JSONDecode(game:HttpGet(url))
+
+	for _,v in pairs(data.data) do
+		if v.playing <= 6 and not visited[v.id] then
+			visited[v.id] = true
+			TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+			return
+		end
+	end
+	visited = {}
+end
+
+-- ================= CHECK MOON + ICON =================
+local function getMoonStatus()
+	local t = Lighting.ClockTime
+	local moon = workspace:FindFirstChild("Moon")
+	local moonHigh = false
+
+	if moon and moon:IsA("BasePart") then
+		local cam = workspace.CurrentCamera
+		local dir = (moon.Position - cam.CFrame.Position).Unit
+		local dot = dir:Dot(Vector3.new(0,1,0))
+		if dot > 0.5 then
+			moonHigh = true
+		end
+	end
+
+	if t >= 23 or t <= 2 or moonHigh then
+		return "🌕 FULL", "FULL"
+	elseif t >= 20 then
+		return "🌖 Sắp", "NEAR"
+	elseif t >= 17 then
+		return "🌗 Nửa", "MID"
+	else
+		return "🌘 Còn lâu", "FAR"
+	end
+end
+
+-- ================= MAIN LOOP =================
+local running = false
+
+iconLabel.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		running = not running
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(2)
+
+		local text, level = getMoonStatus()
+		iconLabel.Text = text
+
+		if running then
+			if level == "FULL" or level == "NEAR" then
+				running = false
+			elseif level == "MID" or level == "FAR" then
+				hopServer()
+			end
+		end
+	end
+end)
