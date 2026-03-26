@@ -1,0 +1,122 @@
+loadstring([[
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+-- GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+local btn = Instance.new("TextButton", gui)
+btn.Size = UDim2.new(0,180,0,40)
+btn.Position = UDim2.new(0.05,0,0.5,0)
+btn.Text = "SAFE HUB: OFF"
+btn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+
+local running = false
+
+btn.MouseButton1Click:Connect(function()
+	running = not running
+	btn.Text = "SAFE HUB: "..(running and "ON" or "OFF")
+end)
+
+-- ISLAND DATA (tọa độ + bán kính)
+local islands = {
+	{name="Jungle", pos=CFrame.new(-1600,10,150), radius=2500},
+	{name="Snow", pos=CFrame.new(1100,10,-1400), radius=2500},
+	{name="Magma", pos=CFrame.new(-5200,10,8500), radius=3000},
+	{name="Sky1", pos=CFrame.new(-4800,700,-2600), radius=3000},
+}
+
+local index = 1
+local moving = false
+
+-- TWEEN MƯỢT (ANTI RUNG)
+function tweenTo(cf)
+	if moving then return end
+	moving = true
+
+	local dist = (root.Position - cf.Position).Magnitude
+	local speed = 200
+
+	local tween = TweenService:Create(
+		root,
+		TweenInfo.new(dist/speed, Enum.EasingStyle.Linear),
+		{CFrame = cf}
+	)
+
+	tween:Play()
+	tween.Completed:Wait()
+
+	moving = false
+end
+
+-- LẤY RƯƠNG TRONG ĐẢO HIỆN TẠI
+function getIslandChests(center, radius)
+	local list = {}
+
+	for _,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("BasePart") and string.find(v.Name:lower(),"chest") then
+			
+			local dist = (center.Position - v.Position).Magnitude
+			
+			if dist <= radius then
+				table.insert(list, v)
+			end
+		end
+	end
+
+	return list
+end
+
+-- SẮP XẾP RƯƠNG GẦN TRƯỚC (RẤT QUAN TRỌNG)
+function sortChests(list)
+	table.sort(list, function(a,b)
+		return (root.Position - a.Position).Magnitude < (root.Position - b.Position).Magnitude
+	end)
+	return list
+end
+
+-- LOOP CHÍNH
+spawn(function()
+	while true do
+		task.wait(0.2)
+
+		if running then
+			local island = islands[index]
+
+			-- ✈️ 1. BAY TỚI ĐẢO
+			tweenTo(island.pos)
+
+			-- ⏱️ 2. ĐỢI LOAD
+			task.wait(4)
+
+			-- 📦 3. LẤY RƯƠNG TRONG ĐẢO
+			local chests = getIslandChests(island.pos, island.radius)
+			chests = sortChests(chests)
+
+			-- ⚡ 4. NHẶT TỪNG RƯƠNG
+			for _,chest in pairs(chests) do
+				if chest and chest.Parent then
+					root.CFrame = chest.CFrame + Vector3.new(0,3,0)
+					task.wait(0.9)
+				end
+			end
+
+			-- ⏱️ 5. NGHỈ
+			task.wait(5)
+
+			-- ➡️ 6. QUA ĐẢO TIẾP
+			index = index + 1
+			if index > #islands then
+				index = 1
+			end
+		end
+	end
+end)
+
+]])()
