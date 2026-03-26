@@ -1,0 +1,71 @@
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+
+local player = Players.LocalPlayer
+local placeId = game.PlaceId
+
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+local hopBtn = Instance.new("TextButton", gui)
+hopBtn.Size = UDim2.new(0,200,0,60)
+hopBtn.Position = UDim2.new(0.5,-100,0.8,0)
+hopBtn.Text = "🔁 HOP SERVER"
+hopBtn.BackgroundColor3 = Color3.fromRGB(255,50,50)
+hopBtn.TextColor3 = Color3.new(1,1,1)
+hopBtn.Visible = false
+
+-- ================= GIÁ TRÁI =================
+local fruitPrices = {
+	["dragon"]=3500000,
+	["tiger"]=5000000,
+	["kitsune"]=8000000,
+	["dough"]=2800000,
+	["venom"]=3000000,
+	["spirit"]=3400000,
+	["control"]=3200000,
+	["shadow"]=2900000,
+	["t-rex"]=2700000,
+	["mammoth"]=2600000,
+	["gravity"]=2500000,
+	["blizzard"]=2400000,
+	["portal"]=1900000,
+	["pain"]=2300000,
+	["gas"]=2100000,
+}
+
+-- ================= CHECK =================
+local function hasGoodFruit()
+	for _,v in pairs(workspace:GetDescendants()) do
+		local name = v.Name:lower()
+		
+		for fruit,price in pairs(fruitPrices) do
+			if name == fruit or name:match("^"..fruit) then
+				if price >= 1900000 then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+
+-- ================= CHECK SERVER =================
+task.spawn(function()
+	task.wait(10) -- đợi load
+	
+	if not hasGoodFruit() then
+		hopBtn.Visible = true
+		
+		game.StarterGui:SetCore("SendNotification", {
+			Title="FRUIT",
+			Text="❌ Không có trái xịn → bấm HOP",
+			Duration=5
+		})
+	end
+end)
+
+-- ================= CLICK HOP =================
+hopBtn.MouseButton1Click:Connect(function()
+	TeleportService:Teleport(placeId)
+end)
