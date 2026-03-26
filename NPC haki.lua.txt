@@ -1,0 +1,79 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+
+-- ================= UI =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local btn = Instance.new("TextButton", gui)
+btn.Size = UDim2.new(0,200,0,50)
+btn.Position = UDim2.new(0.05,0,0.4,0)
+btn.Text = "🔍 FIND HAKI: OFF"
+btn.TextScaled = true
+btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+btn.TextColor3 = Color3.new(1,1,1)
+btn.Active = true
+btn.Draggable = true
+
+local running = false
+
+-- ================= CHECK NPC =================
+local function isHakiNPC(v)
+	if v:IsA("Model") and v:FindFirstChild("Humanoid") then
+		local name = v.Name:lower()
+		return name:find("legendary") or name:find("color")
+	end
+end
+
+-- ================= ESP =================
+local function createESP(npc)
+	if npc:FindFirstChild("HakiESP") then return end
+	
+	local head = npc:FindFirstChild("Head")
+	if not head then return end
+	
+	local esp = Instance.new("BillboardGui", npc)
+	esp.Name = "HakiESP"
+	esp.Size = UDim2.new(0,150,0,40)
+	esp.Adornee = head
+	esp.AlwaysOnTop = true
+
+	local text = Instance.new("TextLabel", esp)
+	text.Size = UDim2.new(1,0,1,0)
+	text.BackgroundTransparency = 1
+	text.TextScaled = true
+	text.TextColor3 = Color3.fromRGB(255,255,0)
+
+	task.spawn(function()
+		while npc.Parent do
+			task.wait(0.3)
+			local char = player.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local dist = (head.Position - char.HumanoidRootPart.Position).Magnitude
+				text.Text = "⭐ HAKI LEGEND - "..math.floor(dist).."m"
+			end
+		end
+	end)
+end
+
+-- ================= HOP SERVER =================
+local visited = {}
+
+local function hopServer()
+	local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+	local data = HttpService:JSONDecode(game:HttpGet(url))
+
+	for _,v in pairs(data.data) do
+		if v.playing <= 6 and not visited[v.id] then
+			visited[v.id] = true
+			TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+			return
+		end
+	end
+
+	visited =
