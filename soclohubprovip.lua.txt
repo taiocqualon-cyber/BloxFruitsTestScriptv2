@@ -1,0 +1,81 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local running = true -- bật auto
+
+-- nhận diện trái
+local function isFruit(v)
+	local name = v.Name:lower()
+	return name:find("fruit") or name:find("blox")
+end
+
+-- tìm trái gần nhất (toàn map)
+local function getNearestFruit()
+	local char = player.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+	
+	local root = char.HumanoidRootPart.Position
+	local nearest = nil
+	local minDist = math.huge
+	
+	for _,v in pairs(workspace:GetDescendants()) do
+		if isFruit(v) and v:IsA("BasePart") then
+			local dist = (v.Position - root).Magnitude
+			
+			if dist < minDist then
+				minDist = dist
+				nearest = v
+			end
+		end
+	end
+	
+	return nearest, minDist
+end
+
+-- tween mượt
+local function tweenTo(pos)
+	local char = player.Character
+	if not char then return end
+	
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+	
+	local dist = (root.Position - pos).Magnitude
+	local speed = 250
+	
+	local tween = TweenService:Create(
+		root,
+		TweenInfo.new(dist/speed, Enum.EasingStyle.Linear),
+		{CFrame = CFrame.new(pos + Vector3.new(0,3,0))}
+	)
+	
+	tween:Play()
+	tween.Completed:Wait()
+end
+
+-- LOOP SMART
+spawn(function()
+	while running do
+		task.wait(2) -- delay chống lag + chống spam
+		
+		local fruit, dist = getNearestFruit()
+		
+		if fruit then
+			print("🍍 Tìm thấy trái:", fruit.Name, "Distance:", math.floor(dist))
+			
+			-- nếu quá xa → giảm tần suất để tránh lag
+			if dist > 2000 then
+				task.wait(2)
+			end
+			
+			tweenTo(fruit.Position)
+			
+			-- nghỉ sau khi tới
+			task.wait(1.5)
+		else
+			print("❌ Không có trái trong server")
+			task.wait(3)
+		end
+	end
+end)
