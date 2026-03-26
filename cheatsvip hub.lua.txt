@@ -1,0 +1,100 @@
+loadstring([[
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local root = player.Character:WaitForChild("HumanoidRootPart")
+
+-- GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+local btn = Instance.new("TextButton", gui)
+btn.Size = UDim2.new(0,180,0,40)
+btn.Position = UDim2.new(0.05,0,0.5,0)
+btn.Text = "AUTO ISLAND: OFF"
+btn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+
+local running = false
+
+btn.MouseButton1Click:Connect(function()
+	running = not running
+	btn.Text = "AUTO ISLAND: "..(running and "ON" or "OFF")
+end)
+
+-- DANH SÁCH ĐẢO (THEO THỨ TỰ)
+local islands = {
+	CFrame.new(0,10,0),           -- đảo đầu
+	CFrame.new(-300,10,300),      -- thị trấn cảng (ví dụ)
+	CFrame.new(-1600,10,150),     -- jungle
+	CFrame.new(1100,10,-1400),    -- snow
+}
+
+local index = 1
+
+-- TWEEN
+function tweenTo(cf)
+	local dist = (root.Position - cf.Position).Magnitude
+	local speed = 200
+
+	local tween = TweenService:Create(
+		root,
+		TweenInfo.new(dist/speed, Enum.EasingStyle.Linear),
+		{CFrame = cf}
+	)
+
+	tween:Play()
+	tween.Completed:Wait()
+end
+
+-- LẤY RƯƠNG GẦN (40 STUDS)
+function getNearbyChests()
+	local list = {}
+
+	for _,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("BasePart") and string.find(v.Name:lower(),"chest") then
+			if (root.Position - v.Position).Magnitude <= 40 then
+				table.insert(list, v)
+			end
+		end
+	end
+
+	return list
+end
+
+-- LOOP
+spawn(function()
+	while true do
+		task.wait(0.2)
+
+		if running then
+			
+			-- ⏱️ đợi load
+			task.wait(4)
+
+			-- 📦 nhặt rương gần
+			local chests = getNearbyChests()
+
+			for _,chest in pairs(chests) do
+				if chest and chest.Parent then
+					root.CFrame = chest.CFrame + Vector3.new(0,3,0)
+					task.wait(0.9)
+				end
+			end
+
+			-- ⏱️ nghỉ
+			task.wait(4)
+
+			-- ✈️ qua đảo tiếp theo
+			index = index + 1
+			if index > #islands then
+				index = 1
+			end
+
+			tweenTo(islands[index])
+		end
+	end
+end)
+
+]])()
