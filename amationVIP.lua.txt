@@ -1,0 +1,106 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+local head = char:WaitForChild("Head")
+local cam = workspace.CurrentCamera
+
+-- ================= PARTICLE & LIGHT =================
+local light = Instance.new("PointLight", root)
+light.Color = Color3.fromRGB(255,215,0)
+light.Range = 25
+light.Brightness = 6
+
+local emitter = Instance.new("ParticleEmitter", root)
+emitter.Color = ColorSequence.new(Color3.fromRGB(255,215,0))
+emitter.LightEmission = 1
+emitter.Size = NumberSequence.new(1)
+emitter.Speed = NumberRange.new(5)
+emitter.Rate = 60
+emitter.Lifetime = NumberRange.new(1)
+emitter.Enabled = false
+
+local eye = Instance.new("SpotLight", head)
+eye.Color = Color3.fromRGB(255,0,0)
+eye.Range = 8
+eye.Brightness = 5
+eye.Enabled = false
+
+-- ================= CINEMATIC TEXT =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local textLabel = Instance.new("TextLabel", gui)
+textLabel.Size = UDim2.new(1,0,0.2,0)
+textLabel.Position = UDim2.new(0,0,0.4,0)
+textLabel.BackgroundTransparency = 1
+textLabel.TextColor3 = Color3.fromRGB(255,215,0)
+textLabel.TextScaled = true
+textLabel.TextStrokeTransparency = 0
+textLabel.TextTransparency = 1
+textLabel.Text = ""
+
+local function tweenText(label,msg,duration)
+	for i=1,#msg do
+		label.Text = msg:sub(1,i)
+		label.TextTransparency = 0
+		task.wait(duration/#msg)
+	end
+end
+
+-- ================= CAMERA CINEMATIC =================
+local function cameraCinematic()
+	local orig = cam.CFrame
+	local target = root.CFrame * CFrame.new(0,10,15) * CFrame.Angles(math.rad(-25),0,0)
+
+	-- Zoom lên
+	TweenService:Create(cam, TweenInfo.new(1.2,Enum.EasingStyle.Sine), {CFrame=target}):Play()
+	task.wait(1.2)
+
+	-- Rung + xoay nhẹ
+	for i=1,6 do
+		cam.CFrame = cam.CFrame * CFrame.Angles(0,math.rad(5),0) * CFrame.new(0,0,0.3)
+		task.wait(0.08)
+	end
+
+	-- flash mắt đỏ
+	eye.Enabled = true
+	task.wait(0.15)
+	eye.Enabled = false
+
+	-- Lùi về camera cũ
+	TweenService:Create(cam, TweenInfo.new(1,Enum.EasingStyle.Sine), {CFrame=orig}):Play()
+end
+
+-- ================= NHÂN VẬT BAY =================
+local function flyUp()
+	local start = root.Position
+	local target = start + Vector3.new(0,20,0)
+
+	TweenService:Create(root,TweenInfo.new(1.2,Enum.EasingStyle.Sine),{CFrame=CFrame.new(target)}):Play()
+end
+
+-- ================= RUN CINEMATIC =================
+task.spawn(function()
+	emitter.Enabled = true
+
+	-- Nhân vật bay lên
+	flyUp()
+	task.wait(1.2)
+
+	-- Chữ cinematic
+	tweenText(textLabel,"CHÀO MỪNG ĐẾN VỚI FULL MOON VIP 4 PRO",1.8)
+	task.wait(0.5)
+	TweenService:Create(textLabel,TweenInfo.new(0.5),{TextTransparency=1}):Play()
+
+	-- Camera cinematic
+	cameraCinematic()
+
+	-- Tắt particle/light
+	emitter.Enabled = false
+	light:Destroy()
+	eye:Destroy()
+end)
