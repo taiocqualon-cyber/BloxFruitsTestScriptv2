@@ -1,0 +1,106 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,260,0,100)
+frame.Position = UDim2.new(0.02,0,0.4,0)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.Active = true
+frame.Draggable = true
+
+local label = Instance.new("TextLabel", frame)
+label.Size = UDim2.new(1,0,0.6,0)
+label.BackgroundTransparency = 1
+label.TextScaled = true
+label.TextColor3 = Color3.new(1,1,1)
+
+local btn = Instance.new("TextButton", frame)
+btn.Size = UDim2.new(1,0,0.4,0)
+btn.Position = UDim2.new(0,0,0.6,0)
+btn.Text = "🔁 START FIND"
+btn.TextScaled = true
+btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+btn.TextColor3 = Color3.new(1,1,1)
+
+-- ================= HOP =================
+local visited = {}
+
+local function hopServer()
+	local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+	local data = HttpService:JSONDecode(game:HttpGet(url))
+
+	for _,v in pairs(data.data) do
+		if v.playing <= 6 and not visited[v.id] then
+			visited[v.id] = true
+			TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+			return
+		end
+	end
+
+	visited = {}
+end
+
+-- ================= MOON INFO =================
+local function getMoonInfo()
+	local t = Lighting.ClockTime
+	
+	local percent = math.floor((t / 24) * 100)
+	local timeLeft = math.floor((24 - t) * 60) -- phút (ước lượng)
+
+	if t >= 23 or t <= 2 then
+		return "🌕 FULL MOON", percent, timeLeft, "FULL"
+	elseif t >= 20 then
+		return "🌖 Sắp Full", percent, timeLeft, "NEAR"
+	elseif t >= 17 then
+		return "🌗 Nửa", percent, timeLeft, "MID"
+	else
+		return "🌘 Còn lâu", percent, timeLeft, "FAR"
+	end
+end
+
+-- ================= MAIN =================
+local running = false
+
+btn.MouseButton1Click:Connect(function()
+	running = not running
+	btn.Text = running and "⏸ STOP" or "🔁 START FIND"
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(2)
+
+		local text, percent, timeLeft, level = getMoonInfo()
+
+		label.Text = text.." | "..percent.."% | ⏱ "..timeLeft.."s"
+
+		if running then
+			if level == "FULL" then
+				btn.Text = "🌕 GIỮ SERVER"
+				running = false
+
+			elseif level == "NEAR" then
+				btn.Text = "🌖 ĐỢI FULL"
+				running = false
+
+			elseif level == "MID" then
+				btn.Text = "🌗 HOP..."
+				hopServer()
+
+			else
+				btn.Text = "🌘 HOP..."
+				hopServer()
+			end
+		end
+	end
+end)
