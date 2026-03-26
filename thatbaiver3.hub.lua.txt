@@ -1,0 +1,92 @@
+repeat task.wait() until game:IsLoaded()
+
+local TweenService = game:GetService("TweenService")
+local player = game.Players.LocalPlayer
+local root = player.Character:WaitForChild("HumanoidRootPart")
+
+-- GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+local btn = Instance.new("TextButton", gui)
+btn.Size = UDim2.new(0,180,0,40)
+btn.Position = UDim2.new(0.05,0,0.5,0)
+btn.Text = "Auto Chest: OFF"
+btn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+
+local running = false
+
+btn.MouseButton1Click:Connect(function()
+	running = not running
+	btn.Text = "Auto Chest: "..(running and "ON" or "OFF")
+end)
+
+-- DANH SÁCH ĐẢO
+local islands = {
+	CFrame.new(-1600, 10, 150), -- Jungle
+	CFrame.new(1100, 10, -1400), -- Snow
+	CFrame.new(-5200, 10, 8500), -- Magma
+	CFrame.new(-4800, 700, -2600), -- Sky 1
+	CFrame.new(-7900, 5500, -380), -- Sky 2
+	CFrame.new(-7900, 5600, -1400), -- Sky 3
+}
+
+local index = 1
+
+-- TWEEN
+function tweenTo(pos)
+	local dist = (root.Position - pos.Position).Magnitude
+	local speed = 250
+
+	local tween = TweenService:Create(
+		root,
+		TweenInfo.new(dist/speed, Enum.EasingStyle.Linear),
+		{CFrame = pos}
+	)
+
+	tween:Play()
+	tween.Completed:Wait()
+end
+
+-- TÌM RƯƠNG GẦN
+function getChest()
+	local dist = 300 -- chỉ lấy rương gần
+	local chosen = nil
+
+	for _,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("BasePart") and string.find(v.Name:lower(),"chest") then
+			local d = (root.Position - v.Position).Magnitude
+			if d < dist then
+				dist = d
+				chosen = v
+			end
+		end
+	end
+
+	return chosen
+end
+
+-- LOOP
+spawn(function()
+	while true do
+		task.wait(0.3)
+
+		if running then
+			local chest = getChest()
+
+			if chest then
+				-- bay tới rương
+				tweenTo(chest.CFrame + Vector3.new(0,3,0))
+				task.wait(1)
+			else
+				-- hết rương → sang đảo khác
+				tweenTo(islands[index])
+				task.wait(2)
+
+				index = index + 1
+				if index > #islands then
+					index = 1
+				end
+			end
+		end
+	end
+end)
