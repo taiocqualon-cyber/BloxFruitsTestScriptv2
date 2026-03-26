@@ -1,0 +1,111 @@
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+-- =================
+-- MENU NHỎ GỌN
+-- =================
+local menu = Instance.new("Frame", gui)
+menu.Size = UDim2.new(0,60,0,60)
+menu.Position = UDim2.new(0.05,0,0.5,-30)
+menu.AnchorPoint = Vector2.new(0,0.5)
+menu.BackgroundColor3 = Color3.fromRGB(0,170,255)
+menu.Active = true
+menu.Draggable = true
+local corner = Instance.new("UICorner", menu)
+corner.CornerRadius = UDim.new(1,0)
+
+-- NÚT ON/OFF
+local toggle = Instance.new("TextButton", menu)
+toggle.Size = UDim2.new(1,0,1,0)
+toggle.Text = "OFF"
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.Font = Enum.Font.GothamBold
+toggle.BackgroundTransparency = 1
+toggle.TextScaled = true
+
+local running = false
+toggle.MouseButton1Click:Connect(function()
+	running = not running
+	toggle.Text = running and "ON" or "OFF"
+	if running then
+		-- 1️⃣ Xoá hiệu ứng vũ khí / trái ác quỷ
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") then
+				v.Enabled = false
+			end
+		end
+
+		-- 2️⃣ Giảm đồ hoạ 50%
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.Material = Enum.Material.SmoothPlastic
+				v.Reflectance = 0
+			elseif v:IsA("Texture") or v:IsA("Decal") then
+				v.Transparency = 1
+			end
+		end
+
+		-- 3️⃣ Ẩn tất cả người chơi trừ mình
+		for _,p in pairs(Players:GetPlayers()) do
+			if p ~= player and p.Character then
+				for _,part in pairs(p.Character:GetDescendants()) do
+					if part:IsA("BasePart") then
+						part.Transparency = 1
+						part.CanCollide = false
+					end
+				end
+			end
+		end
+
+		-- 4️⃣ Xoá hiệu ứng quái vật
+		for _,mob in pairs(workspace:GetDescendants()) do
+			if mob.Name:lower():find("mob") or mob.Name:lower():find("npc") then
+				for _,v in pairs(mob:GetDescendants()) do
+					if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") then
+						v.Enabled = false
+					end
+				end
+			end
+		end
+
+		-- 5️⃣ Tối ưu FPS cao nhất
+		Lighting.GlobalShadows = false
+		Lighting.FogEnd = 100000
+		Lighting.Brightness = 0.8
+
+		print("✅ FIX LAG TỐI ĐA ON: đồ họa -50%, vũ khí/trái NPC tắt, FPS cao")
+	else
+		-- Reset (ON -> OFF)
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.Transparency = 0
+				v.Material = Enum.Material.Plastic
+				v.Reflectance = 0
+			elseif v:IsA("Texture") or v:IsA("Decal") then
+				v.Transparency = 0
+			elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") then
+				v.Enabled = true
+			end
+		end
+
+		for _,p in pairs(Players:GetPlayers()) do
+			if p.Character then
+				for _,part in pairs(p.Character:GetDescendants()) do
+					if part:IsA("BasePart") then
+						part.Transparency = 0
+						part.CanCollide = true
+					end
+				end
+			end
+		end
+
+		Lighting.GlobalShadows = true
+		Lighting.FogEnd = 1000
+		Lighting.Brightness = 1
+
+		print("✅ FIX LAG TỐI ĐA OFF: restore game")
+	end
+end)
