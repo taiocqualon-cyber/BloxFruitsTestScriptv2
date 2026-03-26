@@ -1,0 +1,164 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+
+-- ================= UI =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local label = Instance.new("TextLabel", gui)
+label.Size = UDim2.new(0,320,0,50)
+label.Position = UDim2.new(0.5,-160,0.1,0)
+label.BackgroundTransparency = 0.3
+label.BackgroundColor3 = Color3.fromRGB(0,0,0)
+label.TextColor3 = Color3.new(1,1,1)
+label.TextScaled = true
+label.Text = "🔄 Đang khởi động..."
+
+-- ================= CHECK TRÁI =================
+local function isFruit(v)
+	return v:IsA("Tool") and v:FindFirstChild("Handle") and v.Name:lower():find("fruit")
+end
+
+-- ================= GIÁ =================
+local function getPrice(v)
+	local name = v.Name:lower()
+
+	if name:find("kitsune") then return 8000000 end
+	if name:find("dragon") or name:find("tiger") then return 5000000 end
+	if name:find("dough") or name:find("venom") then return 3000000 end
+	if name:find("spirit") or name:find("control") then return 3200000 end
+	
+	return 1000000
+end
+
+-- ================= ESP =================
+local function createESP(fruit)
+	if fruit:FindFirstChild("ESP") then return end
+	
+	local esp = Instance.new("BillboardGui", fruit)
+	esp.Name = "ESP"
+	esp.Size = UDim2.new(0,120,0,40)
+	esp.Adornee = fruit.Handle
+	esp.AlwaysOnTop = true
+
+	local text = Instance.new("TextLabel", esp)
+	text.Size = UDim2.new(1,0,1,0)
+	text.BackgroundTransparency = 1
+	text.TextScaled = true
+	text.TextColor3 = Color3.new(1,1,1)
+
+	task.spawn(function()
+		while fruit.Parent do
+			task.wait(0.2)
+			local char = player.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local dist = (fruit.Handle.Position - char.HumanoidRootPart.Position).Magnitude
+				text.Text = "🍏 Fruits - "..math.floor(dist).."m"
+			end
+		end
+	end)
+end
+
+-- ================= TWEEN =================
+local function tweenTo(pos)
+	local char = player.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+	
+	local root = char.HumanoidRootPart
+	
+	local tween = TweenService:Create(root, TweenInfo.new(
+		(root.Position - pos).Magnitude / 200,
+		Enum.EasingStyle.Linear
+	), {CFrame = CFrame.new(pos)})
+	
+	tween:Play()
+end
+
+-- ================= HOP SERVER =================
+local visited = {}
+
+local function hopServer()
+	label.Text = "🔁 Đổi server..."
+
+	local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+	local data = HttpService:JSONDecode(game:HttpGet(url))
+
+	for _,v in pairs(data.data) do
+		if v.playing <= 6 and not visited[v.id] then
+			visited[v.id] = true
+			TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+			return
+		end
+	end
+
+	visited = {}
+end
+
+-- ================= ANTI ĐỨNG YÊN =================
+local lastMove = tick()
+local lastPos = nil
+
+task.spawn(function()
+	while true do
+		task.wait(2)
+
+		local char = player.Character
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			local pos = char.HumanoidRootPart.Position
+			
+			if lastPos then
+				if (pos - lastPos).Magnitude > 5 then
+					lastMove = tick()
+				end
+			end
+			
+			lastPos = pos
+		end
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(5)
+		if tick() - lastMove > 20 then
+			label.Text = "⚠️ Kẹt → đổi server"
+			hopServer()
+		end
+	end
+end)
+
+-- ================= MAIN =================
+while true do
+	task.wait(2)
+
+	local bestFruit = nil
+	local bestPrice = 0
+
+	for _,v in pairs(workspace:GetDescendants()) do
+		if isFruit(v) then
+			local price = getPrice(v)
+
+			if price > bestPrice then
+				bestPrice = price
+				bestFruit = v
+			end
+
+			createESP(v)
+		end
+	end
+
+	if bestFruit and bestPrice >= 1900000 then
+		label.Text = "🎯 Có trái xịn → đang bay"
+		tweenTo(bestFruit.Handle.Position)
+	else
+		label.Text = "❌ Không có trái xịn"
+		task.wait(2)
+		hopServer()
+	end
+end
