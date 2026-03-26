@@ -1,0 +1,77 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local workspace = game:GetService("Workspace")
+
+-- ================= DANH SÁCH TRÁI VỚI GIÁ =================
+local fruitPrices = {
+	["dragon"]=3500000,
+	["tiger"]=5000000,
+	["kitsune"]=8000000,
+	["dough"]=2800000,
+	["venom"]=3000000,
+	["spirit"]=3400000,
+	["control"]=3200000,
+	["shadow"]=2900000,
+	["t-rex"]=2700000,
+	["mammoth"]=2600000,
+	["gravity"]=2500000,
+	["blizzard"]=2400000,
+	["portal"]=1900000,
+	["pain"]=2300000,
+	["gas"]=2100000,
+}
+
+-- ================= HÀM KIỂM TRA TRÁI THẬT =================
+local function isFruit(v)
+	if not v:IsA("Tool") then return false end
+	if not v:FindFirstChild("Handle") then return false end
+	return fruitPrices[v.Name:lower()] ~= nil
+end
+
+-- ================= TẠO ESP =================
+local function createESP(fruit)
+	if fruit:FindFirstChild("Handle") then
+		local dot = Instance.new("BillboardGui")
+		dot.Name = "FruitDotESP"
+		dot.Size = UDim2.new(0,20,0,20)
+		dot.Adornee = fruit.Handle
+		dot.AlwaysOnTop = true
+
+		local circle = Instance.new("Frame", dot)
+		circle.Size = UDim2.new(1,0,1,0)
+		circle.AnchorPoint = Vector2.new(0.5,0.5)
+		circle.Position = UDim2.new(0.5,0,0.5,0)
+		circle.BackgroundTransparency = 0
+		circle.BorderSizePixel = 0
+		circle.Radius = UDim.new(0.5,0)
+
+		-- ===== XÁC ĐỊNH MÀU THEO GIÁ =====
+		local price = fruitPrices[fruit.Name:lower()]
+		if price < 2000000 then
+			circle.BackgroundColor3 = Color3.fromRGB(255,255,255) -- trắng
+		elseif price < 3000000 then
+			circle.BackgroundColor3 = Color3.fromRGB(128,0,128) -- tím
+		elseif price < 5000000 then
+			circle.BackgroundColor3 = Color3.fromRGB(255,255,0) -- vàng
+		else
+			circle.BackgroundColor3 = Color3.fromRGB(255,0,0) -- đỏ
+		end
+
+		dot.Parent = fruit
+	end
+end
+
+-- ================= QUÉT SERVER =================
+task.spawn(function()
+	while true do
+		task.wait(1)
+		for _,v in pairs(workspace:GetDescendants()) do
+			if isFruit(v) and not v:FindFirstChild("FruitDotESP") then
+				createESP(v)
+			end
+		end
+	end
+end)
