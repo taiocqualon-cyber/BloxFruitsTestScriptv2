@@ -1,0 +1,113 @@
+-- Ultimate VIP PRO MAX Cinematic + Space Effect
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+-- =================
+-- FPS LABEL
+-- =================
+local fpsLabel = Instance.new("TextLabel", gui)
+fpsLabel.Size = UDim2.new(0,120,0,40)
+fpsLabel.Position = UDim2.new(0,10,0,10)
+fpsLabel.BackgroundTransparency = 0.3
+fpsLabel.BackgroundColor3 = Color3.fromRGB(0,0,0)
+fpsLabel.TextColor3 = Color3.new(1,1,1)
+fpsLabel.Font = Enum.Font.GothamBold
+fpsLabel.TextScaled = true
+fpsLabel.Text = "FPS: --"
+
+local lastUpdate = tick()
+local frameCount = 0
+RunService.RenderStepped:Connect(function(deltaTime)
+	frameCount = frameCount + 1
+	if tick() - lastUpdate >= 1 then
+		fpsLabel.Text = "FPS: "..frameCount
+		frameCount = 0
+		lastUpdate = tick()
+	end
+end)
+
+-- =================
+-- INTRO CHỮ "Fix Lag"
+-- =================
+local text = "Fix Lag"
+local letters = {}
+local startX = 0.2
+
+for i = 1,#text do
+	local char = text:sub(i,i)
+	local lbl = Instance.new("TextLabel", gui)
+	lbl.Text = char
+	lbl.Font = Enum.Font.GothamBold
+	lbl.TextColor3 = Color3.new(1,1,1)
+	lbl.TextScaled = true
+	lbl.Size = UDim2.new(0,50,0,50)
+	lbl.Position = UDim2.new(startX + i*0.05,0,0.4,0)
+	lbl.BackgroundTransparency = 1
+	lbl.TextTransparency = 1
+	TweenService:Create(lbl, TweenInfo.new(0.5), {TextTransparency=0}):Play()
+	table.insert(letters,lbl)
+	task.wait(0.15)
+end
+task.wait(1.5)
+for _,lbl in pairs(letters) do lbl:Destroy() end
+
+-- =================
+-- MENU TRÒN TỰ DO
+-- =================
+local menu = Instance.new("Frame", gui)
+menu.Size = UDim2.new(0,80,0,80)
+menu.Position = UDim2.new(0.5,-40,0.5,-40)
+menu.AnchorPoint = Vector2.new(0.5,0.5)
+menu.BackgroundColor3 = Color3.fromRGB(0,170,255)
+menu.Visible = true
+menu.Active = true
+menu.Draggable = true
+local corner = Instance.new("UICorner", menu)
+corner.CornerRadius = UDim.new(1,0)
+
+-- NÚT ON/OFF
+local toggle = Instance.new("TextButton", menu)
+toggle.Size = UDim2.new(1,0,1,0)
+toggle.Text = "OFF"
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.Font = Enum.Font.GothamBold
+toggle.BackgroundTransparency = 1
+
+local running = false
+toggle.MouseButton1Click:Connect(function()
+	running = not running
+	toggle.Text = running and "ON" or "OFF"
+	if running then
+		-- Giảm ánh sáng 20%
+		Lighting.Brightness = Lighting.Brightness * 0.8
+		-- Giảm hiệu ứng 40%
+		for _,v in pairs(Lighting:GetDescendants()) do
+			if v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") then
+				v.Enabled = false
+			end
+		end
+		-- Rocket space effect
+		local rocket = Instance.new("ImageLabel", gui)
+		rocket.Size = UDim2.new(0,40,0,40)
+		rocket.Position = menu.Position
+		rocket.BackgroundTransparency = 1
+		rocket.Image = "rbxassetid://6871579870" -- icon rocket
+		rocket.ImageColor3 = Color3.fromRGB(255,100,0)
+		local dest = UDim2.new(math.random(),0,math.random(),0)
+		TweenService:Create(rocket,TweenInfo.new(2,Enum.EasingStyle.Linear),{Position=dest}):Play()
+		game:GetService("Debris"):AddItem(rocket,2)
+	else
+		-- Reset ánh sáng và hiệu ứng
+		Lighting.Brightness = Lighting.Brightness / 0.8
+		for _,v in pairs(Lighting:GetDescendants()) do
+			if v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") then
+				v.Enabled = true
+			end
+		end
+	end
+end)
