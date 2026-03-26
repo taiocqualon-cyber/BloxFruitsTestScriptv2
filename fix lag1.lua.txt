@@ -1,0 +1,80 @@
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+-- CHỮ INTRO
+local text = "Fix Lag"
+local letters = {}
+local startX = 0.2
+for i = 1,#text do
+	local char = text:sub(i,i)
+	local lbl = Instance.new("TextLabel", gui)
+	lbl.Text = char
+	lbl.Font = Enum.Font.GothamBold
+	lbl.TextColor3 = Color3.new(1,1,1)
+	lbl.TextScaled = true
+	lbl.Size = UDim2.new(0,50,0,50)
+	lbl.Position = UDim2.new(startX + i*0.05,0,0.4,0)
+	lbl.BackgroundTransparency = 1
+	lbl.TextTransparency = 1
+	local tween = TweenService:Create(lbl, TweenInfo.new(0.5), {TextTransparency=0})
+	tween:Play()
+	table.insert(letters,lbl)
+	task.wait(0.15)
+end
+task.wait(1.5)
+for _,lbl in pairs(letters) do lbl:Destroy() end
+
+-- MENU TRÒN
+local menu = Instance.new("Frame", gui)
+menu.Size = UDim2.new(0,60,0,60)
+menu.Position = UDim2.new(0,10,0.5,-30)
+menu.AnchorPoint = Vector2.new(0,0.5)
+menu.BackgroundColor3 = Color3.fromRGB(0,170,255)
+menu.Visible = true
+local corner = Instance.new("UICorner", menu)
+corner.CornerRadius = UDim.new(1,0)
+menu.Active = true
+menu.Draggable = true
+
+-- NÚT ON/OFF
+local toggle = Instance.new("TextButton", menu)
+toggle.Size = UDim2.new(1,0,1,0)
+toggle.Text = "OFF"
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.Font = Enum.Font.GothamBold
+toggle.BackgroundTransparency = 1
+
+local running = false
+toggle.MouseButton1Click:Connect(function()
+	running = not running
+	toggle.Text = running and "ON" or "OFF"
+	if running then
+		Lighting.Brightness = Lighting.Brightness * 0.8
+		for _,v in pairs(Lighting:GetDescendants()) do
+			if v:IsA("BloomEffect") or v:IsA("BlurEffect") then v.Enabled=false end
+		end
+
+		-- HIỆU ỨNG SPACE / ROCKET
+		local rocket = Instance.new("ImageLabel", gui)
+		rocket.Size = UDim2.new(0,40,0,40)
+		rocket.Position = menu.Position
+		rocket.BackgroundTransparency = 1
+		rocket.Image = "rbxassetid://6871579870" -- ví dụ rocket icon
+		rocket.ImageColor3 = Color3.fromRGB(255,100,0)
+
+		local dest = UDim2.new(math.random(),0,math.random(),0)
+		local tweenRocket = TweenService:Create(rocket,TweenInfo.new(2,Enum.EasingStyle.Linear),{Position=dest})
+		tweenRocket:Play()
+		tweenRocket.Completed:Connect(function() rocket:Destroy() end)
+
+	else
+		Lighting.Brightness = Lighting.Brightness / 0.8
+		for _,v in pairs(Lighting:GetDescendants()) do
+			if v:IsA("BloomEffect") or v:IsA("BlurEffect") then v.Enabled=true end
+		end
+	end
+end)
