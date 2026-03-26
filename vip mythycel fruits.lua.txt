@@ -1,0 +1,113 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- ================= GIÁ TRÁI =================
+local fruitPrices = {
+	["dragon"]=3500000,
+	["tiger"]=5000000,
+	["kitsune"]=8000000,
+	["dough"]=2800000,
+	["venom"]=3000000,
+	["spirit"]=3400000,
+	["control"]=3200000,
+	["shadow"]=2900000,
+	["t-rex"]=2700000,
+	["mammoth"]=2600000,
+	["gravity"]=2500000,
+	["blizzard"]=2400000,
+	["portal"]=1900000,
+	["pain"]=2300000,
+	["gas"]=2100000,
+}
+
+-- ================= GUI MŨI TÊN =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+local arrow = Instance.new("TextLabel", gui)
+arrow.Size = UDim2.new(0,250,0,50)
+arrow.Position = UDim2.new(0.5,-125,0.85,0)
+arrow.BackgroundTransparency = 1
+arrow.TextColor3 = Color3.fromRGB(255,255,0)
+arrow.TextScaled = true
+arrow.Text = "No Fruit"
+
+-- ================= ÂM THANH =================
+local sound = Instance.new("Sound", gui)
+sound.SoundId = "rbxassetid://9118828563" -- âm báo
+sound.Volume = 2
+
+-- ================= CHECK =================
+local function getFruitValue(v)
+	local name = v.Name:lower()
+	for fruit,price in pairs(fruitPrices) do
+		if name == fruit or name:match("^"..fruit) then
+			return price
+		end
+	end
+end
+
+-- ================= LẤY VỊ TRÍ =================
+local function getPos(v)
+	if v:IsA("Tool") and v:FindFirstChild("Handle") then
+		return v.Handle.Position
+	elseif v:IsA("BasePart") then
+		return v.Position
+	end
+end
+
+local fruits = {}
+local bestFruit = nil
+
+-- ================= QUÉT CHẬM =================
+task.spawn(function()
+	while true do
+		task.wait(2)
+		
+		fruits = {}
+		bestFruit = nil
+		local bestPrice = 0
+		
+		for _,v in pairs(workspace:GetDescendants()) do
+			local price = getFruitValue(v)
+			
+			if price and price >= 1900000 then
+				table.insert(fruits, v)
+				
+				if price > bestPrice then
+					bestPrice = price
+					bestFruit = v
+				end
+			end
+		end
+		
+		-- 🔔 nếu có trái xịn
+		if bestFruit then
+			sound:Play()
+		end
+	end
+end)
+
+-- ================= HIỂN THỊ =================
+task.spawn(function()
+	while true do
+		task.wait(0.3)
+		
+		local char = player.Character
+		if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
+		
+		local root = char.HumanoidRootPart.Position
+		
+		if bestFruit then
+			local pos = getPos(bestFruit)
+			local price = getFruitValue(bestFruit)
+			
+			if pos then
+				local dist = (pos - root).Magnitude
+				
+				arrow.Text = "🎯 "..bestFruit.Name.." ("..math.floor(price/1000000).."M) - "..math.floor(dist).."m"
+			end
+		else
+			arrow.Text = "❌ No Fruit → HOP SERVER"
+		end
+	end
+end)
