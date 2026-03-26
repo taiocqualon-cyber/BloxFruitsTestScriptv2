@@ -1,0 +1,99 @@
+local TweenService = game:GetService("TweenService")
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+-- MÀN TỐI
+local fade = Instance.new("Frame", gui)
+fade.Size = UDim2.new(1,0,1,0)
+fade.BackgroundColor3 = Color3.new(0,0,0)
+fade.BackgroundTransparency = 1 -- bắt đầu trong suốt
+
+-- TWEEN FADE IN
+local tweenFade = TweenService:Create(
+	fade,
+	TweenInfo.new(1.5, Enum.EasingStyle.Sine),
+	{BackgroundTransparency = 0} -- tối hoàn toàn
+)
+tweenFade:Play()
+tweenFade.Completed:Wait()
+
+-- MÀN HÌNH ĐEN → HIỆU ỨNG MẶT TRỜI ĐỎ
+local sun = Instance.new("ImageLabel", gui)
+sun.Size = UDim2.new(0,100,0,100)
+sun.Position = UDim2.new(0.5,-50,0.2,-50)
+sun.BackgroundTransparency = 1
+sun.Image = "rbxassetid://1381865768" -- placeholder mặt trời
+sun.ImageColor3 = Color3.fromRGB(255,0,0)
+sun.Rotation = 0
+
+-- Tween mặt trời xoay, zoom
+local tweenSun = TweenService:Create(
+	sun,
+	TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+	{Size = UDim2.new(0,300,0,300), Rotation = 360}
+)
+tweenSun:Play()
+tweenSun.Completed:Wait()
+
+-- CHỮ "quenh sóc lọ"
+local finalText = Instance.new("TextLabel", gui)
+finalText.Size = UDim2.new(1,0,0,100)
+finalText.Position = UDim2.new(0.5,-150,0.5,-50)
+finalText.Text = "quenh sóc lọ"
+finalText.TextScaled = true
+finalText.TextColor3 = Color3.new(1,1,1)
+finalText.Font = Enum.Font.GothamBold
+finalText.BackgroundTransparency = 1
+finalText.TextStrokeTransparency = 0.5
+
+-- TẠO HIỆU ỨNG BAY NGOẰN NGOÈO
+for i=1,#finalText.Text do
+	local char = finalText.Text:sub(i,i)
+	local label = Instance.new("TextLabel", gui)
+	label.Size = UDim2.new(0,50,0,50)
+	label.BackgroundTransparency = 1
+	label.Text = char
+	label.TextScaled = true
+	label.TextColor3 = Color3.new(1,1,1)
+	label.Font = Enum.Font.GothamBold
+	label.Position = UDim2.new(math.random(),0,math.random(),0)
+
+	local tween = TweenService:Create(
+		label,
+		TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+		{Position = UDim2.new(0.5, (i*20)-(#finalText.Text*10), 0.5, 0)}
+	)
+	tween:Play()
+	task.wait(0.1)
+end
+
+task.wait(2)
+
+-- XÓA CHỮ BAY
+for _,v in pairs(gui:GetChildren()) do
+	if v:IsA("TextLabel") and v ~= finalText then
+		v:Destroy()
+	end
+end
+
+-- FADE OUT MÀN TỐI
+local tweenFadeOut = TweenService:Create(
+	fade,
+	TweenInfo.new(1.5, Enum.EasingStyle.Sine),
+	{BackgroundTransparency = 1}
+)
+tweenFadeOut:Play()
+tweenFadeOut.Completed:Wait()
+
+-- HIỆN MENU TRÒN BÌNH THƯỜNG
+local menu = Instance.new("Frame", gui)
+menu.Size = UDim2.new(0,200,0,200)
+menu.Position = UDim2.new(0.5,-100,0.5,-100)
+menu.BackgroundColor3 = Color3.fromRGB(0,170,255)
+menu.AnchorPoint = Vector2.new(0.5,0.5)
+menu.Active = true
+menu.Draggable = true
+menu.Visible = true
+menu.AutoButtonColor = true
+local corner = Instance.new("UICorner", menu)
+corner.CornerRadius = UDim.new(1,0)
