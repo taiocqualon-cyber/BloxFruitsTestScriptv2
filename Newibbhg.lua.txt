@@ -1,0 +1,136 @@
+loadstring([[
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+-- GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+local btn = Instance.new("TextButton", gui)
+btn.Size = UDim2.new(0,180,0,40)
+btn.Position = UDim2.new(0.05,0,0.5,0)
+btn.Text = "VIP MAX: OFF"
+btn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+
+local status = Instance.new("TextLabel", gui)
+status.Size = UDim2.new(0,200,0,40)
+status.Position = UDim2.new(0.05,0,0.45,0)
+status.TextColor3 = Color3.new(1,1,1)
+status.BackgroundTransparency = 1
+
+local running = false
+
+btn.MouseButton1Click:Connect(function()
+	running = not running
+	btn.Text = "VIP MAX: "..(running and "ON" or "OFF")
+end)
+
+-- ISLANDS
+local islands = {
+	CFrame.new(-1600,10,150),
+	CFrame.new(1100,10,-1400),
+	CFrame.new(-5200,10,8500),
+	CFrame.new(-4800,700,-2600),
+}
+
+-- TÌM ĐẢO GẦN NHẤT
+function getNearestIsland()
+	local dist = math.huge
+	local chosen = nil
+
+	for _,cf in pairs(islands) do
+		local d = (root.Position - cf.Position).Magnitude
+		if d < dist then
+			dist = d
+			chosen = cf
+		end
+	end
+
+	return chosen, dist
+end
+
+-- DI CHUYỂN THÔNG MINH
+function moveTo(cf)
+	local dist = (root.Position - cf.Position).Magnitude
+
+	if dist > 600 then
+		-- teleport
+		root.CFrame = cf
+	else
+		-- tween
+		local tween = TweenService:Create(
+			root,
+			TweenInfo.new(dist/200, Enum.EasingStyle.Linear),
+			{CFrame = cf}
+		)
+		tween:Play()
+		tween.Completed:Wait()
+	end
+end
+
+-- LẤY RƯƠNG TRONG PHẠM VI 40
+function getNearbyChests()
+	local list = {}
+
+	for _,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("BasePart") and string.find(v.Name:lower(),"chest") then
+			if (root.Position - v.Position).Magnitude <= 40 then
+				table.insert(list, v)
+			end
+		end
+	end
+
+	return list
+end
+
+-- ĐẾM NGƯỢC
+function countdown()
+	for i = 4,1,-1 do
+		status.Text = "Starting in: "..i
+		task.wait(1)
+	end
+	status.Text = "Running..."
+end
+
+-- LOOP
+spawn(function()
+	while true do
+		task.wait(0.2)
+
+		if running then
+			
+			-- đếm ngược
+			countdown()
+
+			while running do
+				
+				-- 📦 NHẶT RƯƠNG GẦN
+				local chests = getNearbyChests()
+
+				for _,chest in pairs(chests) do
+					if chest and chest.Parent then
+						root.CFrame = chest.CFrame + Vector3.new(0,3,0)
+						task.wait(0.9)
+					end
+				end
+
+				-- ⏱️ nghỉ
+				task.wait(4)
+
+				-- 🌍 tới đảo gần nhất
+				local island = getNearestIsland()
+				moveTo(island)
+
+				-- ⏱️ đợi load
+				task.wait(4)
+			end
+		end
+	end
+end)
+
+]])()
