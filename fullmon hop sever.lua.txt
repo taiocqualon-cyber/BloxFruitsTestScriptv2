@@ -1,0 +1,73 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
+
+local player = Players.LocalPlayer
+
+-- ================= UI =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local label = Instance.new("TextLabel", gui)
+label.Size = UDim2.new(0,340,0,50)
+label.Position = UDim2.new(0.5,-170,0.1,0)
+label.BackgroundTransparency = 0.3
+label.BackgroundColor3 = Color3.fromRGB(0,0,0)
+label.TextColor3 = Color3.new(1,1,1)
+label.TextScaled = true
+label.Text = "🌕 Đang săn Full Moon..."
+
+-- ================= HOP =================
+local visited = {}
+
+local function hopServer()
+	local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+	local data = HttpService:JSONDecode(game:HttpGet(url))
+
+	for _,v in pairs(data.data) do
+		if v.playing <= 5 and not visited[v.id] then
+			visited[v.id] = true
+			TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+			return
+		end
+	end
+
+	visited = {}
+end
+
+-- ================= CHECK FULL MOON =================
+local function isFullMoon()
+	local t = Lighting.ClockTime
+	return t <= 1 or t >= 23
+end
+
+-- ================= MAIN =================
+while true do
+	task.wait(2)
+
+	local t = Lighting.ClockTime
+
+	if isFullMoon() then
+		label.Text = "🌕 FULL MOON → GIỮ SERVER!"
+		break
+	else
+		label.Text = "❌ Time: "..math.floor(t).." → hop"
+		task.wait(1)
+		hopServer()
+	end
+end
+
+-- ================= SAU KHI TÌM ĐƯỢC =================
+-- giữ server để spawn Mirage
+task.spawn(function()
+	while true do
+		task.wait(5)
+
+		label.Text = "🌕 Đang chờ Mirage Island..."
+
+		-- bạn có thể tự lái thuyền lúc này
+	end
+end)
