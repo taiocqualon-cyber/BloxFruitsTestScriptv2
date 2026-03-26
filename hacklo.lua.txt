@@ -1,0 +1,75 @@
+loadstring([[
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+local vu = game:GetService("VirtualUser")
+
+-- GUI
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+
+local btn = Instance.new("TextButton", gui)
+btn.Size = UDim2.new(0,140,0,40)
+btn.Position = UDim2.new(0.05,0,0.4,0)
+btn.Text = "90% Hack: OFF"
+btn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+btn.TextColor3 = Color3.new(1,1,1)
+
+local running = false
+local target = nil
+
+-- FIND MOB
+function getMob()
+	local dist = math.huge
+	local chosen = nil
+	for _,v in pairs(workspace:GetChildren()) do
+		if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Name ~= player.Name then
+			local d = (root.Position - v.HumanoidRootPart.Position).Magnitude
+			if d < dist then
+				dist = d
+				chosen = v
+			end
+		end
+	end
+	return chosen
+end
+
+-- TOGGLE
+btn.MouseButton1Click:Connect(function()
+	running = not running
+	btn.Text = "90% Hack: "..(running and "ON" or "OFF")
+end)
+
+-- HIGHLIGHT
+local hl = Instance.new("Highlight")
+hl.FillColor = Color3.fromRGB(255,0,0)
+
+-- LOOP
+spawn(function()
+	while true do
+		task.wait(0.1)
+
+		if running then
+			if not target or not target.Parent or target.Humanoid.Health <= 0 then
+				target = getMob()
+			end
+
+			if target and target:FindFirstChild("HumanoidRootPart") then
+				hl.Parent = target
+
+				-- bay tới gần (chuẩn server)
+				root.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
+
+				-- auto click
+				vu:Button1Down(Vector2.new(0,0))
+				task.wait(0.02)
+				vu:Button1Up(Vector2.new(0,0))
+			end
+		end
+	end
+end)
+
+]])()
