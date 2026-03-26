@@ -30,8 +30,8 @@ status.Text = "Scanning..."
 
 -- ===== MŨI TÊN =====
 local arrow = Instance.new("TextLabel", gui)
-arrow.Size = UDim2.new(0,300,0,50)
-arrow.Position = UDim2.new(0.5,-150,0.85,0)
+arrow.Size = UDim2.new(0,320,0,50)
+arrow.Position = UDim2.new(0.5,-160,0.85,0)
 arrow.BackgroundTransparency = 1
 arrow.TextColor3 = Color3.fromRGB(0,255,0)
 arrow.TextScaled = true
@@ -49,7 +49,6 @@ hopBtn.TextColor3 = Color3.new(1,1,1)
 hopBtn.TextScaled = true
 hopBtn.Visible = false
 hopBtn.ZIndex = 999
-
 Instance.new("UICorner", hopBtn)
 
 -- ===== SOUND =====
@@ -57,7 +56,7 @@ local sound = Instance.new("Sound", gui)
 sound.SoundId = "rbxassetid://9118828563"
 sound.Volume = 1.5
 
--- ================= GIÁ TRÁI =================
+-- ================= DANH SÁCH TRÁI =================
 local fruitPrices = {
 	["dragon"]=3500000,
 	["tiger"]=5000000,
@@ -76,14 +75,11 @@ local fruitPrices = {
 	["gas"]=2100000,
 }
 
--- ================= CHECK =================
-local function getFruitValue(v)
-	local name = v.Name:lower()
-	for fruit,price in pairs(fruitPrices) do
-		if name == fruit or name:match("^"..fruit) then
-			return price
-		end
-	end
+-- ================= KIỂM TRA TRÁI THẬT =================
+local function isRealFruit(v)
+	if not v:IsA("Tool") then return false end
+	if not v:FindFirstChild("Handle") then return false end
+	return fruitPrices[v.Name:lower()] ~= nil
 end
 
 local function getPos(v)
@@ -96,7 +92,6 @@ end
 
 -- ================= SERVER ÍT NGƯỜI =================
 local visited = {}
-
 local function getServer()
 	local url = "https://games.roblox.com/v1/games/"..placeId.."/servers/Public?sortOrder=Asc&limit=100"
 	local data = HttpService:JSONDecode(game:HttpGet(url))
@@ -109,28 +104,27 @@ local function getServer()
 	end
 end
 
--- ================= BIẾN =================
+-- ================= QUÉT TRÁI =================
 local bestFruit = nil
 local bestPrice = 0
 
--- ================= QUÉT =================
 task.spawn(function()
 	while true do
 		task.wait(2)
-
 		bestFruit = nil
 		bestPrice = 0
 		
 		for _,v in pairs(workspace:GetDescendants()) do
-			local price = getFruitValue(v)
-			
-			if price and price > bestPrice then
-				bestPrice = price
-				bestFruit = v
+			if isRealFruit(v) then
+				local price = fruitPrices[v.Name:lower()]
+				if price > bestPrice then
+					bestPrice = price
+					bestFruit = v
+				end
 			end
 		end
 		
-		if bestFruit ~= nil then
+		if bestFruit then
 			status.Text = "✅ Có trái"
 			hopBtn.Visible = false
 			sound:Play()
@@ -141,32 +135,27 @@ task.spawn(function()
 	end
 end)
 
--- ================= ARROW =================
+-- ================= HIỂN THỊ ARROW =================
 task.spawn(function()
 	while true do
 		task.wait(0.3)
-
 		local char = player.Character
 		if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
-		
 		local root = char.HumanoidRootPart.Position
 		
 		if bestFruit then
 			local pos = getPos(bestFruit)
-			
 			if pos then
 				local dist = (pos - root).Magnitude
-				
-				arrow.Text = "🎯 "..bestFruit.Name..
-				" ("..math.floor(bestPrice/1000000).."M) - "..math.floor(dist).."m"
+				arrow.Text = "🍏 Fruits Blox ("..math.floor(bestPrice/1000000).."M) - "..math.floor(dist).."m"
 			end
 		else
-			arrow.Text = "❌ Không có trái"
+			arrow.Text = "❌ Không có trái → bấm đổi server"
 		end
 	end
 end)
 
--- ================= FIX NÚT LUÔN HIỆN =================
+-- ================= ĐẢM BẢO NÚT LUÔN HIỆN =================
 task.spawn(function()
 	while true do
 		task.wait(1)
@@ -176,10 +165,9 @@ task.spawn(function()
 	end
 end)
 
--- ================= CLICK =================
+-- ================= CLICK HOP =================
 hopBtn.MouseButton1Click:Connect(function()
 	local id = getServer()
-	
 	if id then
 		TeleportService:TeleportToPlaceInstance(placeId, id, player)
 	else
