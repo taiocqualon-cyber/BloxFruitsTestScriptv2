@@ -1,0 +1,62 @@
+local TweenService = game:GetService("TweenService")
+local player = game.Players.LocalPlayer
+
+-- GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+-- TEXT CHÍNH
+local finalText = Instance.new("TextLabel", gui)
+finalText.Size = UDim2.new(1,0,0,100)
+finalText.Position = UDim2.new(0,0,0.4,0)
+finalText.BackgroundTransparency = 1
+finalText.Text = ""
+finalText.TextScaled = true
+finalText.TextColor3 = Color3.new(1,1,1)
+finalText.Font = Enum.Font.GothamBold
+
+local text = "quenh sóc lọ"
+
+-- tạo chữ bay
+for i = 1, #text do
+	local char = text:sub(i,i)
+
+	local label = Instance.new("TextLabel", gui)
+	label.Size = UDim2.new(0,50,0,50)
+	label.BackgroundTransparency = 1
+	label.Text = char
+	label.TextScaled = true
+	label.TextColor3 = Color3.new(1,1,1)
+	label.Font = Enum.Font.GothamBold
+	
+	-- vị trí random (bay lung tung)
+	label.Position = UDim2.new(
+		math.random(), 0,
+		math.random(), 0
+	)
+
+	-- tween bay về giữa
+	local tween = TweenService:Create(
+		label,
+		TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+		{
+			Position = UDim2.new(0.5, (i*20)-(#text*10), 0.5, 0)
+		}
+	)
+
+	tween:Play()
+
+	task.wait(0.15)
+end
+
+-- đợi chữ bay xong
+task.wait(2)
+
+-- hiện chữ hoàn chỉnh
+finalText.Text = text
+
+-- xoá chữ nhỏ
+for _,v in pairs(gui:GetChildren()) do
+	if v:IsA("TextLabel") and v ~= finalText then
+		v:Destroy()
+	end
+end
