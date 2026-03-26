@@ -1,0 +1,117 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+local head = char:WaitForChild("Head")
+local cam = workspace.CurrentCamera
+
+-- ================= PARTICLE & LIGHT =================
+local emitter = Instance.new("ParticleEmitter", root)
+emitter.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
+                                   ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,255,0)),
+                                   ColorSequenceKeypoint.new(1, Color3.fromRGB(0,0,0))})
+emitter.Rate = 60
+emitter.Speed = NumberRange.new(6)
+emitter.Lifetime = NumberRange.new(1)
+emitter.Enabled = false
+
+local light = Instance.new("PointLight", root)
+light.Color = Color3.fromRGB(255,215,0)
+light.Range = 25
+light.Brightness = 6
+
+local eye = Instance.new("SpotLight", head)
+eye.Color = Color3.fromRGB(255,0,0)
+eye.Range = 8
+eye.Brightness = 5
+eye.Enabled = false
+
+-- ================= CINEMATIC TEXT =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local textLabel = Instance.new("TextLabel", gui)
+textLabel.Size = UDim2.new(1,0,0.2,0)
+textLabel.Position = UDim2.new(0,0,0.4,0)
+textLabel.BackgroundTransparency = 1
+textLabel.TextColor3 = Color3.fromRGB(255,0,0)
+textLabel.TextStrokeTransparency = 0
+textLabel.TextTransparency = 1
+textLabel.TextScaled = true
+textLabel.Text = ""
+
+-- ================= FUNCTIONS =================
+local function tweenText(label,msg,duration)
+	for i=1,#msg do
+		label.Text = msg:sub(1,i)
+		label.TextTransparency = 0
+		task.wait(duration/#msg)
+	end
+end
+
+local function cameraCinematic(targetCF, duration)
+	local orig = cam.CFrame
+	TweenService:Create(cam,TweenInfo.new(duration,Enum.EasingStyle.Sine),{CFrame=targetCF}):Play()
+	task.wait(duration)
+	return orig
+end
+
+local function flyUp(height,duration)
+	local start = root.Position
+	local target = start + Vector3.new(0,height,0)
+	TweenService:Create(root,TweenInfo.new(duration,Enum.EasingStyle.Sine),{CFrame=CFrame.new(target)}):Play()
+	task.wait(duration)
+end
+
+-- ================= RUN CINEMATIC =================
+task.spawn(function()
+	emitter.Enabled = true
+
+	-- 1. Bay lên trời
+	flyUp(25,2)
+
+	-- 2. Particle xoay quanh + camera quay
+	local baseCF = root.CFrame
+	for i=1,30 do
+		root.CFrame = baseCF * CFrame.Angles(0,math.rad(i*12),0)
+		local camCF = root.CFrame * CFrame.new(0,5,15)
+		cam.CFrame = camCF:lerp(cam.CFrame,0.5)
+		task.wait(0.05)
+	end
+
+	-- 3. Câu thoại cinematic
+	tweenText(textLabel,"Triển khai lãnh địa!",1.5)
+	task.wait(0.5)
+	TweenService:Create(textLabel,TweenInfo.new(0.5),{TextTransparency=1}):Play()
+
+	-- 4. Hạ xuống đất + nổ
+	TweenService:Create(root,TweenInfo.new(1,Enum.EasingStyle.Sine),{CFrame=CFrame.new(baseCF.Position.X,baseCF.Position.Y,baseCF.Position.Z)}):Play()
+	task.wait(1)
+	-- flash nổ
+	local flash = Instance.new("PointLight", root)
+	flash.Color = Color3.fromRGB(255,0,0)
+	flash.Range = 30
+	flash.Brightness = 8
+	task.wait(0.2)
+	flash:Destroy()
+
+	-- 5. Camera zoom + quay qua lại
+	local origCF = cam.CFrame
+	for i=-15,15,5 do
+		cam.CFrame = root.CFrame * CFrame.new(0,5,10) * CFrame.Angles(0,math.rad(i),0)
+		task.wait(0.05)
+	end
+	TweenService:Create(cam,TweenInfo.new(0.5,Enum.EasingStyle.Sine),{CFrame=origCF}):Play()
+
+	-- 6. Phóng sắt khí đỏ từ mắt
+	eye.Enabled = true
+	task.wait(0.3)
+	eye.Enabled = false
+
+	-- Tắt particle/light
+	emitter.Enabled = false
+	light:Destroy()
+end)
