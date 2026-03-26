@@ -1,0 +1,93 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+local cam = workspace.CurrentCamera
+
+-- ================= FULLSCREEN FADE =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local fade = Instance.new("Frame", gui)
+fade.Size = UDim2.new(1,0,1,0)
+fade.Position = UDim2.new(0,0,0,0)
+fade.BackgroundColor3 = Color3.new(0,0,0)
+fade.BackgroundTransparency = 1
+fade.ZIndex = 100
+
+-- ================= CINEMATIC TEXT =================
+local textLabel = Instance.new("TextLabel", gui)
+textLabel.Size = UDim2.new(1,0,0.2,0)
+textLabel.Position = UDim2.new(0,0,0.4,0)
+textLabel.BackgroundTransparency = 1
+textLabel.TextColor3 = Color3.fromRGB(255,215,0)
+textLabel.TextScaled = true
+textLabel.TextStrokeTransparency = 0
+textLabel.TextTransparency = 1
+textLabel.Text = ""
+
+local message = "VIP V4 ACTIVATED"
+
+-- ================= PARTICLE =================
+local light = Instance.new("PointLight", root)
+light.Color = Color3.fromRGB(255,215,0)
+light.Range = 20
+light.Brightness = 5
+
+local emitter = Instance.new("ParticleEmitter", root)
+emitter.Color = ColorSequence.new(Color3.fromRGB(255,215,0))
+emitter.LightEmission = 1
+emitter.Size = NumberSequence.new(1)
+emitter.Speed = NumberRange.new(5)
+emitter.Rate = 50
+emitter.Lifetime = NumberRange.new(1)
+emitter.Enabled = false
+
+-- ================= FUNCTION =================
+local function tweenFade(frame, from, to, duration)
+	local tween = TweenService:Create(frame, TweenInfo.new(duration), {BackgroundTransparency = to})
+	tween:Play()
+	tween.Completed:Wait()
+end
+
+local function tweenText(label, msg, duration)
+	for i = 1,#msg do
+		label.Text = string.sub(msg,1,i)
+		label.TextTransparency = 0
+		task.wait(duration/#msg)
+	end
+end
+
+-- ================= CINEMATIC =================
+task.spawn(function()
+	-- bật particle
+	emitter.Enabled = true
+
+	-- fade màn
+	tweenFade(fade,1,0,0.5)
+	tweenFade(fade,0,1,1)
+
+	-- text xuất
+	tweenText(textLabel, message, 1.5)
+	task.wait(0.5)
+
+	-- fade text
+	TweenService:Create(textLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+	task.wait(0.5)
+
+	-- camera effect: zoom vào nhân vật nhẹ
+	local origCFrame = cam.CFrame
+	TweenService:Create(cam, TweenInfo.new(1.2), {CFrame = root.CFrame * CFrame.new(0,3,8)}):Play()
+	task.wait(1.2)
+	TweenService:Create(cam, TweenInfo.new(1), {CFrame = origCFrame}):Play()
+
+	-- tắt particle/light
+	emitter.Enabled = false
+	light:Destroy()
+	fade:Destroy()
+	textLabel:Destroy()
+end)
