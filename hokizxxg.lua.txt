@@ -1,0 +1,174 @@
+loadstring([[
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+local meleeRemote = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("meleeEvent")
+
+-- CONFIG
+local autoAttack = false
+local targetPlayer = nil
+local attackSpeed = 0.05
+local distance = 3
+
+-- GUI
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+
+-- NÚT TRÒN
+local open = Instance.new("ImageButton", gui)
+open.Size = UDim2.new(0,60,0,60)
+open.Position = UDim2.new(0.1,0,0.3,0)
+open.Image = "rbxassetid://15059956542" -- ICON CHẮC CHẮN HIỆN
+open.BackgroundTransparency = 1
+open.Draggable = true
+Instance.new("UICorner", open).CornerRadius = UDim.new(1,0)
+
+-- MAIN
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0,320,0,300)
+main.Position = UDim2.new(0.5,-160,0.5,-150)
+main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.Visible = false
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main)
+
+-- TAB BUTTONS
+local function tabBtn(name,x)
+	local b = Instance.new("TextButton", main)
+	b.Size = UDim2.new(0,100,0,30)
+	b.Position = UDim2.new(0,x,0,0)
+	b.Text = name
+	b.BackgroundColor3 = Color3.fromRGB(70,70,70)
+	b.TextColor3 = Color3.new(1,1,1)
+	return b
+end
+
+local attackTab = tabBtn("Attack",0)
+local settingTab = tabBtn("Setting",110)
+local infoTab = tabBtn("Info",220)
+
+-- PAGES
+local function page()
+	local f = Instance.new("Frame", main)
+	f.Size = UDim2.new(1,0,1,-40)
+	f.Position = UDim2.new(0,0,0,40)
+	f.BackgroundTransparency = 1
+	f.Visible = false
+	return f
+end
+
+local attackPage = page()
+local settingPage = page()
+local infoPage = page()
+
+-- SWITCH TAB
+local function show(p)
+	attackPage.Visible=false
+	settingPage.Visible=false
+	infoPage.Visible=false
+	p.Visible=true
+end
+show(attackPage)
+
+attackTab.MouseButton1Click:Connect(function() show(attackPage) end)
+settingTab.MouseButton1Click:Connect(function() show(settingPage) end)
+infoTab.MouseButton1Click:Connect(function() show(infoPage) end)
+
+-- ATTACK BUTTON
+local toggle = Instance.new("TextButton", attackPage)
+toggle.Size = UDim2.new(0,260,0,40)
+toggle.Position = UDim2.new(0,30,0,10)
+toggle.Text = "Auto Attack: OFF"
+toggle.BackgroundColor3 = Color3.fromRGB(90,90,90)
+toggle.TextColor3 = Color3.new(1,1,1)
+
+toggle.MouseButton1Click:Connect(function()
+	autoAttack = not autoAttack
+	toggle.Text = "Auto Attack: "..(autoAttack and "ON" or "OFF")
+end)
+
+-- PLAYER LIST
+local function loadPlayers()
+	for _,v in pairs(attackPage:GetChildren()) do
+		if v.Name=="plr" then v:Destroy() end
+	end
+
+	local y = 60
+	for _,p in pairs(Players:GetPlayers()) do
+		if p ~= player then
+			local b = Instance.new("TextButton", attackPage)
+			b.Name = "plr"
+			b.Size = UDim2.new(0,260,0,30)
+			b.Position = UDim2.new(0,30,0,y)
+			b.Text = p.Name
+			b.BackgroundColor3 = Color3.fromRGB(120,120,120)
+			b.TextColor3 = Color3.new(1,1,1)
+
+			b.MouseButton1Click:Connect(function()
+				targetPlayer = p
+			end)
+
+			y = y + 35
+		end
+	end
+end
+
+loadPlayers()
+Players.PlayerAdded:Connect(loadPlayers)
+Players.PlayerRemoving:Connect(loadPlayers)
+
+-- SETTING PAGE
+local spd = Instance.new("TextButton", settingPage)
+spd.Size = UDim2.new(0,260,0,40)
+spd.Position = UDim2.new(0,30,0,20)
+spd.Text = "Speed: "..attackSpeed
+
+spd.MouseButton1Click:Connect(function()
+	attackSpeed = attackSpeed - 0.01
+	if attackSpeed < 0.01 then attackSpeed = 0.1 end
+	spd.Text = "Speed: "..attackSpeed
+end)
+
+local dist = Instance.new("TextButton", settingPage)
+dist.Size = UDim2.new(0,260,0,40)
+dist.Position = UDim2.new(0,30,0,80)
+dist.Text = "Distance: "..distance
+
+dist.MouseButton1Click:Connect(function()
+	distance = distance + 1
+	if distance > 10 then distance = 3 end
+	dist.Text = "Distance: "..distance
+end)
+
+-- INFO
+local info = Instance.new("TextLabel", infoPage)
+info.Size = UDim2.new(1,0,1,0)
+info.Text = "FULL HUB 😎\nAuto Attack\nPvP\nSetting chỉnh tốc độ"
+info.TextColor3 = Color3.new(1,1,1)
+info.BackgroundTransparency = 1
+
+-- OPEN MENU
+open.MouseButton1Click:Connect(function()
+	main.Visible = not main.Visible
+end)
+
+-- AUTO ATTACK LOOP
+spawn(function()
+	while true do
+		task.wait(attackSpeed)
+		if autoAttack and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			local t = targetPlayer.Character.HumanoidRootPart
+			root.CFrame = t.CFrame * CFrame.new(0,0,distance)
+			if meleeRemote then
+				meleeRemote:FireServer(t.Position)
+			end
+		end
+	end
+end)
+
+]])()
