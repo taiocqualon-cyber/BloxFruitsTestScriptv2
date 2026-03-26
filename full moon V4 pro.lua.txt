@@ -1,0 +1,200 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local player = Players.LocalPlayer
+
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+local head = char:WaitForChild("Head")
+local cam = workspace.CurrentCamera
+
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+-- fade
+local fade = Instance.new("Frame", gui)
+fade.Size = UDim2.new(1,0,1,0)
+fade.BackgroundColor3 = Color3.new(0,0,0)
+fade.BackgroundTransparency = 0
+fade.ZIndex = 100
+
+-- text
+local textLabel = Instance.new("TextLabel", gui)
+textLabel.Size = UDim2.new(1,0,0.2,0)
+textLabel.Position = UDim2.new(0,0,0.4,0)
+textLabel.BackgroundTransparency = 1
+textLabel.TextColor3 = Color3.fromRGB(255,215,0)
+textLabel.TextScaled = true
+textLabel.TextStrokeTransparency = 0
+textLabel.TextTransparency = 1
+
+-- ================= EFFECT =================
+local light = Instance.new("PointLight", root)
+light.Color = Color3.fromRGB(255,215,0)
+light.Range = 25
+light.Brightness = 6
+
+local emitter = Instance.new("ParticleEmitter", root)
+emitter.Rate = 60
+emitter.Speed = NumberRange.new(6)
+emitter.Enabled = false
+
+local eye = Instance.new("SpotLight", head)
+eye.Color = Color3.fromRGB(255,0,0)
+eye.Enabled = false
+
+-- ================= FUNCTION =================
+local function smoothFade(to)
+	TweenService:Create(fade, TweenInfo.new(1,Enum.EasingStyle.Sine), {BackgroundTransparency=to}):Play()
+end
+
+local function smoothText(msg)
+	for i=1,#msg do
+		textLabel.Text = msg:sub(1,i)
+		textLabel.TextTransparency = 0
+		task.wait(0.04)
+	end
+end
+
+local function cameraAnim()
+	local orig = cam.CFrame
+	local target = root.CFrame * CFrame.new(0,3,7)
+
+	TweenService:Create(cam, TweenInfo.new(1.2,Enum.EasingStyle.Sine), {CFrame=target}):Play()
+	task.wait(1.2)
+
+	-- rung mượt
+	for i=1,10 do
+		cam.CFrame = cam.CFrame:Lerp(cam.CFrame * CFrame.Angles(0,math.rad(3),0),0.5)
+		task.wait(0.05)
+	end
+
+	-- mắt đỏ
+	eye.Enabled = true
+	task.wait(0.15)
+	eye.Enabled = false
+
+	TweenService:Create(cam, TweenInfo.new(1,Enum.EasingStyle.Sine), {CFrame=orig}):Play()
+end
+
+-- ================= CINEMATIC =================
+task.spawn(function()
+	emitter.Enabled = true
+	
+	smoothFade(1)
+	task.wait(0.5)
+	smoothFade(0)
+	
+	smoothText("CHÀO MỪNG ĐẾN VỚI FULL MOON VIP 4 PRO")
+	task.wait(0.5)
+	TweenService:Create(textLabel,TweenInfo.new(0.5),{TextTransparency=1}):Play()
+	
+	cameraAnim()
+	
+	emitter.Enabled = false
+	light:Destroy()
+	eye:Destroy()
+	fade:Destroy()
+	textLabel:Destroy()
+end)
+
+-- ================= MOON MENU =================
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,140,0,60)
+frame.Position = UDim2.new(0.02,0,0.1,0)
+frame.BackgroundTransparency = 0.3
+frame.BackgroundColor3 = Color3.new(0,0,0)
+frame.Active = true
+frame.Draggable = true
+
+local label = Instance.new("TextLabel", frame)
+label.Size = UDim2.new(1,0,1,0)
+label.BackgroundTransparency = 1
+label.TextScaled = true
+
+local running = false
+label.InputBegan:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1 then
+		running = not running
+	end
+end)
+
+local function moon()
+	local t = Lighting.ClockTime
+	if t>=23 or t<=2 then return "🌕", "FULL"
+	elseif t>=20 then return "🌖", "NEAR"
+	elseif t>=17 then return "🌗", "MID"
+	else return "🌘", "FAR" end
+end
+
+local function hop()
+	local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100"
+	local data = HttpService:JSONDecode(game:HttpGet(url))
+	for _,v in pairs(data.data) do
+		if v.playing <= 6 then
+			TeleportService:TeleportToPlaceInstance(game.PlaceId,v.id,player)
+			break
+		end
+	end
+end
+
+task.spawn(function()
+	while true do
+		task.wait(2)
+		local icon,level = moon()
+		label.Text = icon
+		
+		if running and (level=="MID" or level=="FAR") then
+			hop()
+		end
+	end
+end)
+
+-- ================= ESP =================
+local function esp(obj,name)
+	if obj:FindFirstChild("ESP") then return end
+	local p = obj:FindFirstChildWhichIsA("BasePart")
+	if not p then return end
+	
+	local bill = Instance.new("BillboardGui",obj)
+	bill.Size = UDim2.new(0,150,0,40)
+	bill.Adornee = p
+	bill.AlwaysOnTop = true
+	
+	local txt = Instance.new("TextLabel",bill)
+	txt.Size = UDim2.new(1,0,1,0)
+	txt.BackgroundTransparency = 1
+	txt.TextScaled = true
+	txt.Text = name
+end
+
+task.spawn(function()
+	while true do
+		task.wait(5)
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("Model") then
+				local n=v.Name:lower()
+				if n:find("mirage") then esp(v,"🏝️ MIRAGE")
+				elseif n:find("kitsune") then esp(v,"🦊 KITSUNE")
+				end
+			end
+		end
+	end
+end)
+
+-- ================= BOAT SPEED =================
+task.spawn(function()
+	while true do
+		task.wait(1)
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("VehicleSeat") then
+				v.MaxSpeed = 80
+			end
+		end
+	end
+end)
