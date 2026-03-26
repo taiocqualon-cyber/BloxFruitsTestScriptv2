@@ -1,0 +1,164 @@
+loadstring([[
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+-- GUI
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+
+-- ===== NÚT TRÒN =====
+local open = Instance.new("ImageButton", gui)
+open.Size = UDim2.new(0,60,0,60)
+open.Position = UDim2.new(0.05,0,0.3,0)
+open.Image = "rbxassetid://15059956542"
+open.BackgroundTransparency = 1
+open.Draggable = true
+Instance.new("UICorner", open).CornerRadius = UDim.new(1,0)
+
+-- ===== MAIN =====
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0,520,0,320)
+main.Position = UDim2.new(0.5,-260,0.5,-160)
+main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+main.Visible = false
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main)
+
+-- ===== SIDEBAR =====
+local sidebar = Instance.new("Frame", main)
+sidebar.Size = UDim2.new(0,150,1,0)
+sidebar.BackgroundColor3 = Color3.fromRGB(30,30,30)
+
+-- ===== PAGES =====
+local pages = {}
+local function createPage(name)
+	local f = Instance.new("Frame", main)
+	f.Size = UDim2.new(1,-150,1,0)
+	f.Position = UDim2.new(0,150,0,0)
+	f.BackgroundTransparency = 1
+	f.Visible = false
+	pages[name] = f
+	return f
+end
+
+local function show(name)
+	for i,v in pairs(pages) do v.Visible=false end
+	pages[name].Visible=true
+end
+
+-- ===== TAB =====
+local function tab(name,y)
+	local b = Instance.new("TextButton", sidebar)
+	b.Size = UDim2.new(1,0,0,40)
+	b.Position = UDim2.new(0,0,0,y)
+	b.Text = name
+	b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	b.TextColor3 = Color3.new(1,1,1)
+	b.MouseButton1Click:Connect(function() show(name) end)
+end
+
+tab("Main",10)
+tab("Players",60)
+tab("Waypoint",110)
+tab("Setting",160)
+
+-- ===== PAGES =====
+local mainPage = createPage("Main")
+local playerPage = createPage("Players")
+local waypointPage = createPage("Waypoint")
+local settingPage = createPage("Setting")
+
+show("Main")
+
+-- ===== TOGGLE =====
+local function toggle(parent,text,y)
+	local btn = Instance.new("TextButton", parent)
+	btn.Size = UDim2.new(0,260,0,40)
+	btn.Position = UDim2.new(0,20,0,y)
+	btn.Text = text.." : OFF"
+	btn.BackgroundColor3 = Color3.fromRGB(80,80,80)
+	btn.TextColor3 = Color3.new(1,1,1)
+
+	local state = false
+	btn.MouseButton1Click:Connect(function()
+		state = not state
+		btn.Text = text.." : "..(state and "ON" or "OFF")
+	end)
+end
+
+toggle(mainPage,"Support Move",20)
+
+-- ===== PLAYER LIST =====
+local function loadPlayers()
+	for _,v in pairs(playerPage:GetChildren()) do
+		if v.Name=="plr" then v:Destroy() end
+	end
+
+	local y = 10
+	for _,p in pairs(Players:GetPlayers()) do
+		if p ~= player then
+			local b = Instance.new("TextButton", playerPage)
+			b.Name = "plr"
+			b.Size = UDim2.new(0,260,0,30)
+			b.Position = UDim2.new(0,20,0,y)
+			b.Text = p.Name
+			b.BackgroundColor3 = Color3.fromRGB(100,100,100)
+			b.TextColor3 = Color3.new(1,1,1)
+
+			b.MouseButton1Click:Connect(function()
+				if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+					root.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
+				end
+			end)
+
+			y = y + 35
+		end
+	end
+end
+
+loadPlayers()
+Players.PlayerAdded:Connect(loadPlayers)
+Players.PlayerRemoving:Connect(loadPlayers)
+
+-- ===== WAYPOINT =====
+local savedPos = nil
+
+local save = Instance.new("TextButton", waypointPage)
+save.Size = UDim2.new(0,260,0,40)
+save.Position = UDim2.new(0,20,0,20)
+save.Text = "Save Position"
+save.BackgroundColor3 = Color3.fromRGB(70,70,70)
+
+save.MouseButton1Click:Connect(function()
+	savedPos = root.CFrame
+end)
+
+local go = Instance.new("TextButton", waypointPage)
+go.Size = UDim2.new(0,260,0,40)
+go.Position = UDim2.new(0,20,0,80)
+go.Text = "Go To Saved"
+go.BackgroundColor3 = Color3.fromRGB(70,70,70)
+
+go.MouseButton1Click:Connect(function()
+	if savedPos then
+		root.CFrame = savedPos
+	end
+end)
+
+-- ===== SETTING =====
+local speed = Instance.new("TextButton", settingPage)
+speed.Size = UDim2.new(0,260,0,40)
+speed.Position = UDim2.new(0,20,0,20)
+speed.Text = "Speed: Normal"
+speed.BackgroundColor3 = Color3.fromRGB(80,80,80)
+
+-- ===== OPEN =====
+open.MouseButton1Click:Connect(function()
+	main.Visible = not main.Visible
+end)
+
+]])()
