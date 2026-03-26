@@ -1,0 +1,104 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- ================= CHECK TRÁI =================
+local function isFruit(v)
+	if not v:IsA("Tool") then return false end
+	if not v:FindFirstChild("Handle") then return false end
+	
+	local name = v.Name:lower()
+	return name:find("fruit") ~= nil
+end
+
+-- ================= GIÁ ƯỚC LƯỢNG =================
+local function getPrice(v)
+	local name = v.Name:lower()
+
+	if name:find("kitsune") then return 8000000 end
+	if name:find("dragon") or name:find("tiger") then return 5000000 end
+	if name:find("dough") or name:find("venom") then return 3000000 end
+	if name:find("spirit") or name:find("control") then return 3200000 end
+	if name:find("shadow") or name:find("gravity") then return 2500000 end
+	
+	return 1000000
+end
+
+-- ================= ESP =================
+local function createESP(fruit)
+	if fruit:FindFirstChild("FruitESP") then return end
+	
+	local esp = Instance.new("BillboardGui")
+	esp.Name = "FruitESP"
+	esp.Size = UDim2.new(0,120,0,40)
+	esp.AlwaysOnTop = true
+	esp.Adornee = fruit.Handle
+	esp.StudsOffset = Vector3.new(0,2,0)
+
+	-- DOT
+	local dot = Instance.new("Frame", esp)
+	dot.Size = UDim2.new(0,12,0,12)
+	dot.Position = UDim2.new(0.5,-6,0,0)
+	dot.BorderSizePixel = 0
+	Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
+
+	-- TEXT
+	local text = Instance.new("TextLabel", esp)
+	text.Size = UDim2.new(1,0,0,20)
+	text.Position = UDim2.new(0,0,0,14)
+	text.BackgroundTransparency = 1
+	text.TextScaled = true
+	text.TextStrokeTransparency = 0
+	text.TextColor3 = Color3.new(1,1,1)
+
+	local price = getPrice(fruit)
+
+	-- 🎨 MÀU
+	if price < 2000000 then
+		dot.BackgroundColor3 = Color3.fromRGB(255,255,255)
+	elseif price < 3000000 then
+		dot.BackgroundColor3 = Color3.fromRGB(170,0,255)
+	elseif price < 5000000 then
+		dot.BackgroundColor3 = Color3.fromRGB(255,255,0)
+	else
+		dot.BackgroundColor3 = Color3.fromRGB(255,0,0)
+	end
+
+	esp.Parent = fruit
+
+	-- UPDATE DIST
+	task.spawn(function()
+		while fruit.Parent and esp.Parent do
+			task.wait(0.2)
+
+			local char = player.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local dist = (fruit.Handle.Position - char.HumanoidRootPart.Position).Magnitude
+				
+				text.Text = "🍏 Fruits Blox - "..math.floor(dist).."m"
+			end
+		end
+	end)
+end
+
+-- ================= QUÉT LIÊN TỤC =================
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+
+		for _,v in pairs(workspace:GetDescendants()) do
+			if isFruit(v) then
+				createESP(v)
+			end
+		end
+	end
+end)
+
+-- ================= DETECT SPAWN NGAY =================
+workspace.DescendantAdded:Connect(function(v)
+	task.wait(0.2)
+	if isFruit(v) then
+		createESP(v)
+	end
+end)
