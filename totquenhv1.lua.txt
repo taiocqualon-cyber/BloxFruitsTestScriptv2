@@ -1,0 +1,162 @@
+repeat task.wait() until game:IsLoaded()
+
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- ===== MAIN =====
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 560, 0, 340)
+main.Position = UDim2.new(0.5, -280, 0.5, -170)
+main.BackgroundColor3 = Color3.fromRGB(18,18,18)
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main)
+
+-- ===== TOP BAR =====
+local top = Instance.new("Frame", main)
+top.Size = UDim2.new(1,0,0,40)
+top.BackgroundTransparency = 1
+
+local title = Instance.new("TextLabel", top)
+title.Size = UDim2.new(1, -40, 1, 0)
+title.Position = UDim2.new(0,10,0,0)
+title.Text = "My Hub"
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local close = Instance.new("TextButton", top)
+close.Size = UDim2.new(0,40,1,0)
+close.Position = UDim2.new(1,-40,0,0)
+close.Text = "X"
+close.BackgroundTransparency = 1
+close.TextColor3 = Color3.new(1,1,1)
+
+close.MouseButton1Click:Connect(function()
+	main.Visible = false
+end)
+
+-- ===== SIDEBAR =====
+local sidebar = Instance.new("Frame", main)
+sidebar.Size = UDim2.new(0, 150, 1, -40)
+sidebar.Position = UDim2.new(0,0,0,40)
+sidebar.BackgroundColor3 = Color3.fromRGB(28,28,28)
+Instance.new("UICorner", sidebar)
+
+-- ===== CONTENT =====
+local pages = {}
+
+local function createPage(name)
+	local f = Instance.new("Frame", main)
+	f.Size = UDim2.new(1,-150,1,-40)
+	f.Position = UDim2.new(0,150,0,40)
+	f.BackgroundTransparency = 1
+	f.Visible = false
+	pages[name] = f
+	return f
+end
+
+local function show(name)
+	for i,v in pairs(pages) do v.Visible = false end
+	pages[name].Visible = true
+end
+
+-- ===== TAB =====
+local function createTab(name, y)
+	local b = Instance.new("TextButton", sidebar)
+	b.Size = UDim2.new(1,0,0,40)
+	b.Position = UDim2.new(0,0,0,y)
+	b.Text = name
+	b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	b.TextColor3 = Color3.new(1,1,1)
+
+	b.MouseButton1Click:Connect(function()
+		show(name)
+	end)
+end
+
+createTab("Farming",10)
+createTab("Boss",60)
+createTab("Player",110)
+createTab("Setting",160)
+
+local farm = createPage("Farming")
+local boss = createPage("Boss")
+local playerPage = createPage("Player")
+local setting = createPage("Setting")
+
+show("Farming")
+
+-- ===== TOGGLE (ĐẸP) =====
+local function createToggle(parent, text, y)
+	local frame = Instance.new("Frame", parent)
+	frame.Size = UDim2.new(0,300,0,40)
+	frame.Position = UDim2.new(0,20,0,y)
+	frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	Instance.new("UICorner", frame)
+
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(0.7,0,1,0)
+	label.Text = text
+	label.TextColor3 = Color3.new(1,1,1)
+	label.BackgroundTransparency = 1
+
+	local toggle = Instance.new("Frame", frame)
+	toggle.Size = UDim2.new(0,50,0,20)
+	toggle.Position = UDim2.new(1,-60,0.5,-10)
+	toggle.BackgroundColor3 = Color3.fromRGB(80,80,80)
+	Instance.new("UICorner", toggle)
+
+	local dot = Instance.new("Frame", toggle)
+	dot.Size = UDim2.new(0,20,0,20)
+	dot.BackgroundColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner", dot)
+
+	local state = false
+	frame.InputBegan:Connect(function()
+		state = not state
+		if state then
+			dot.Position = UDim2.new(1,-20,0,0)
+			toggle.BackgroundColor3 = Color3.fromRGB(0,170,255)
+		else
+			dot.Position = UDim2.new(0,0,0,0)
+			toggle.BackgroundColor3 = Color3.fromRGB(80,80,80)
+		end
+	end)
+end
+
+-- ===== DROPDOWN =====
+local function createDropdown(parent, text, y)
+	local btn = Instance.new("TextButton", parent)
+	btn.Size = UDim2.new(0,300,0,40)
+	btn.Position = UDim2.new(0,20,0,y)
+	btn.Text = text.." ▼"
+	btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	btn.TextColor3 = Color3.new(1,1,1)
+end
+
+-- ===== SLIDER =====
+local function createSlider(parent, text, y)
+	local frame = Instance.new("Frame", parent)
+	frame.Size = UDim2.new(0,300,0,40)
+	frame.Position = UDim2.new(0,20,0,y)
+	frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(1,0,0.5,0)
+	label.Text = text..": 50"
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.new(1,1,1)
+end
+
+-- ===== ADD CONTENT =====
+createToggle(farm,"Auto Farm",10)
+createToggle(farm,"Mob Aura",60)
+createDropdown(farm,"Select Weapon",110)
+
+createToggle(boss,"Auto Boss",10)
+
+createToggle(playerPage,"PvP Mode",10)
+
+createSlider(setting,"Speed",10)
