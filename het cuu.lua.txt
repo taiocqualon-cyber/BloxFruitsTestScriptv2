@@ -1,0 +1,143 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+-- ================= NÚT NHỎ =================
+local openBtn = Instance.new("TextButton", gui)
+openBtn.Size = UDim2.new(0,40,0,40)
+openBtn.Position = UDim2.new(0.02,0,0.5,0)
+openBtn.Text = "≡"
+openBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+
+-- ================= MENU =================
+local menu = Instance.new("Frame", gui)
+menu.Size = UDim2.new(0,220,0,150)
+menu.Position = UDim2.new(0.05,0,0.5,-75)
+menu.Visible = false
+menu.BackgroundColor3 = Color3.fromRGB(20,20,20)
+menu.Active = true
+menu.Draggable = true
+
+-- TAB BUTTONS
+local tab1 = Instance.new("TextButton", menu)
+tab1.Size = UDim2.new(0.5,0,0,30)
+tab1.Text = "ESP"
+
+local tab2 = Instance.new("TextButton", menu)
+tab2.Size = UDim2.new(0.5,0,0,30)
+tab2.Position = UDim2.new(0.5,0,0,0)
+tab2.Text = "Speed"
+
+-- CONTENT
+local espFrame = Instance.new("Frame", menu)
+espFrame.Size = UDim2.new(1,0,1,-30)
+espFrame.Position = UDim2.new(0,0,0,30)
+
+local speedFrame = espFrame:Clone()
+speedFrame.Parent = menu
+speedFrame.Visible = false
+
+-- ================= OPEN MENU =================
+openBtn.MouseButton1Click:Connect(function()
+	menu.Visible = not menu.Visible
+end)
+
+-- ================= TAB SWITCH =================
+tab1.MouseButton1Click:Connect(function()
+	espFrame.Visible = true
+	speedFrame.Visible = false
+end)
+
+tab2.MouseButton1Click:Connect(function()
+	espFrame.Visible = false
+	speedFrame.Visible = true
+end)
+
+-- ================= ESP TOGGLE =================
+local espBtn = Instance.new("TextButton", espFrame)
+espBtn.Size = UDim2.new(1,0,0,40)
+espBtn.Text = "ESP: OFF"
+
+local espOn = false
+local texts = {}
+
+local function isFruit(v)
+	local name = v.Name:lower()
+	return name:find("fruit") or name:find("blox")
+end
+
+espBtn.MouseButton1Click:Connect(function()
+	espOn = not espOn
+	espBtn.Text = espOn and "ESP: ON" or "ESP: OFF"
+end)
+
+RunService.RenderStepped:Connect(function()
+	if not espOn then return end
+	
+	local char = player.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+	local root = char.HumanoidRootPart.Position
+
+	for _,v in pairs(workspace:GetDescendants()) do
+		if isFruit(v) and v:IsA("BasePart") then
+			
+			local dist = (v.Position - root).Magnitude
+			
+			if not texts[v] then
+				local bill = Instance.new("BillboardGui", v)
+				bill.Size = UDim2.new(0,150,0,40)
+				bill.AlwaysOnTop = true
+				bill.MaxDistance = 10000
+				
+				local txt = Instance.new("TextLabel", bill)
+				txt.Size = UDim2.new(1,0,1,0)
+				txt.BackgroundTransparency = 1
+				txt.TextColor3 = Color3.fromRGB(255,255,0)
+				txt.TextScaled = true
+				
+				texts[v] = txt
+			end
+			
+			texts[v].Text = v.Name.." - "..math.floor(dist).."m"
+		end
+	end
+end)
+
+-- ================= SPEED SLIDER =================
+local slider = Instance.new("Frame", speedFrame)
+slider.Size = UDim2.new(0.9,0,0,10)
+slider.Position = UDim2.new(0.05,0,0.5,0)
+slider.BackgroundColor3 = Color3.fromRGB(100,100,100)
+
+local knob = Instance.new("Frame", slider)
+knob.Size = UDim2.new(0,10,0,20)
+knob.BackgroundColor3 = Color3.fromRGB(0,170,255)
+
+local dragging = false
+
+knob.InputBegan:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
+end)
+
+knob.InputEnded:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+end)
+
+UIS.InputChanged:Connect(function(i)
+	if dragging then
+		local x = math.clamp(i.Position.X - slider.AbsolutePosition.X,0,slider.AbsoluteSize.X)
+		knob.Position = UDim2.new(0,x,0,-5)
+
+		local percent = x / slider.AbsoluteSize.X
+		
+		local char = player.Character
+		if char and char:FindFirstChild("Humanoid") then
+			local hum = char.Humanoid
+			hum.WalkSpeed = 16 + percent*8
+			hum.JumpPower = 50 + percent*20
+		end
+	end
+end)
