@@ -1,0 +1,110 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local texts = {}
+
+-- ================= DANH SÁCH TRÁI XỊN =================
+-- Mức độ ưu tiên: 1 = cao (Legendary), 2 = trung bình (Mythical)
+local priorityFruits = {
+	["blizzard"] = 1,
+	["dough"] = 1,
+	["tiger"] = 1,
+	["kitsune"] = 2,
+	["portal"] = 2,
+	["venom"] = 1,
+	["spirit"] = 2,
+	["gravity"] = 2,
+	["t-rex"] = 1,
+	["mammoth"] = 1,
+	["control"] = 1,
+	["yeti"] = 2,
+	["buddha"] = 2,
+	["pain"] = 2,
+	["gas"] = 2,
+}
+
+-- ================= KIỂM TRA TRÁI =================
+local function getFruitPriority(v)
+	local name = v.Name:lower()
+	for fruit,level in pairs(priorityFruits) do
+		if name:find(fruit) then
+			return level
+		end
+	end
+	return nil
+end
+
+-- ================= LẤY VỊ TRÍ =================
+local function getPos(v)
+	if v:IsA("Tool") and v:FindFirstChild("Handle") then
+		return v.Handle.Position
+	elseif v:IsA("BasePart") then
+		return v.Position
+	end
+end
+
+-- ================= THÔNG BÁO =================
+local function notify(text)
+	game.StarterGui:SetCore("SendNotification", {
+		Title = "🍍 RARE FRUIT",
+		Text = text,
+		Duration = 5
+	})
+end
+
+-- ================= LOOP =================
+RunService.RenderStepped:Connect(function()
+	local char = player.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+	
+	local root = char.HumanoidRootPart.Position
+	
+	for _,v in pairs(workspace:GetDescendants()) do
+		local priority = getFruitPriority(v)
+		if priority then
+			local pos = getPos(v)
+			if pos then
+				local dist = (pos - root).Magnitude
+				
+				-- tạo BillboardGui nếu chưa có
+				if not texts[v] then
+					local parent = v:IsA("Tool") and v:FindFirstChild("Handle") or v
+					
+					if parent then
+						local bill = Instance.new("BillboardGui", parent)
+						bill.Size = UDim2.new(0,180,0,50)
+						bill.AlwaysOnTop = true
+						bill.MaxDistance = 20000
+						
+						local txt = Instance.new("TextLabel", bill)
+						txt.Size = UDim2.new(1,0,1,0)
+						txt.BackgroundTransparency = 1
+						txt.TextStrokeTransparency = 0
+						txt.Font = Enum.Font.GothamBold
+						txt.TextScaled = true
+						
+						-- màu theo ưu tiên
+						if priority == 1 then
+							txt.TextColor3 = Color3.fromRGB(255,0,0) -- ưu tiên cao
+						else
+							txt.TextColor3 = Color3.fromRGB(255,165,0) -- ưu tiên trung bình
+						end
+						
+						texts[v] = txt
+						
+						-- Thông báo chỉ cho ưu tiên cao
+						if priority == 1 then
+							notify("Phát hiện "..v.Name.." [PRIORITY HIGH]!")
+						end
+					end
+				end
+				
+				-- cập nhật text realtime
+				if texts[v] then
+					local priText = (priority==1 and "High" or "Medium")
+					texts[v].Text = "🍍 "..v.Name.." ["..priText.."] - "..math.floor(dist).."m"
+				end
+			end
+		end
+	end
+end)
