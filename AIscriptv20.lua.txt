@@ -1,0 +1,82 @@
+-- Auto Farm thử nghiệm kiểu Blox Fruits (an toàn)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+
+local attackRange = 20
+local attackDamage = 10
+local attackDelay = 0.7
+local healThreshold = 50
+
+-- Chọn quái dựa trên level player
+local function chooseIsland(playerLevel)
+    local islands = {
+        {name="Bandit Island", minLevel=1, maxLevel=10},
+        {name="Marine Island", minLevel=5, maxLevel=20},
+        {name="Pirate Island", minLevel=15, maxLevel=40}
+    }
+    for _, island in pairs(islands) do
+        if playerLevel >= island.minLevel and playerLevel <= island.maxLevel then
+            return island.minLevel, island.maxLevel
+        end
+    end
+    return 1,10
+end
+
+-- Tìm quái gần nhất phù hợp level
+local function findNearestEnemy(minLevel,maxLevel)
+    local nearest
+    local shortest = math.huge
+    for _,enemy in pairs(workspace.Enemies:GetChildren()) do
+        if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health>0 then
+            local lvl = enemy:FindFirstChild("Level") and enemy.Level.Value or 1
+            if lvl>=minLevel and lvl<=maxLevel then
+                local dist = (enemy.HumanoidRootPart.Position - humanoidRootPart.Position).Magnitude
+                if dist < shortest then
+                    shortest = dist
+                    nearest = enemy
+                end
+            end
+        end
+    end
+    return nearest,shortest
+end
+
+local lastAttack=0
+local function attack(enemy)
+    if tick()-lastAttack>=attackDelay then
+        if enemy and enemy:FindFirstChild("Humanoid") then
+            enemy.Humanoid:TakeDamage(attackDamage)
+            print("Đánh quái:",enemy.Name,"HP còn:",enemy.Humanoid.Health)
+            lastAttack=tick()
+        end
+    end
+end
+
+local function autoHeal()
+    if humanoid.Health<=healThreshold then
+        humanoid.Health=humanoid.MaxHealth
+        print("Đã hồi máu!")
+    end
+end
+
+-- Vòng lặp Auto Farm
+RunService.Heartbeat:Connect(function()
+    local playerLevel = player:FindFirstChild("Level") and player.Level.Value or 1
+    local minLevel,maxLevel = chooseIsland(playerLevel)
+    local enemy,dist = findNearestEnemy(minLevel,maxLevel)
+    if enemy then
+        if dist<=attackRange then
+            attack(enemy)
+        else
+            humanoid:MoveTo(enemy.HumanoidRootPart.Position)
+        end
+    else
+        print("Không có quái nào phù hợp")
+    end
+    autoHeal()
+end)
