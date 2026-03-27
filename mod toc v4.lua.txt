@@ -1,0 +1,94 @@
+-- ===== Player + UI =====
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+-- ===== CoreGui ScreenGui =====
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- ===== Main Frame (Menu bên trái) =====
+local mainFrame = Instance.new("Frame")
+mainFrame.Parent = ScreenGui
+mainFrame.Size = UDim2.new(0,180,0,350)
+mainFrame.Position = UDim2.new(0,10,0,50)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = true
+
+-- Label header
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Parent = mainFrame
+titleLabel.Size = UDim2.new(1,0,0,40)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "FULL TỘC V4 HUB"
+titleLabel.TextScaled = true
+titleLabel.TextColor3 = Color3.fromRGB(255,215,0)
+titleLabel.Font = Enum.Font.SourceSansBold
+
+-- ===== Function tạo Toggle =====
+local function CreateToggle(name, parent, callback)
+	local frame = Instance.new("Frame")
+	frame.Parent = parent
+	frame.Size = UDim2.new(1,0,0,35)
+	frame.BackgroundTransparency = 1
+	frame.Position = UDim2.new(0,0,0,#parent:GetChildren()/2*0.08)
+
+	local label = Instance.new("TextLabel")
+	label.Parent = frame
+	label.Size = UDim2.new(0.7,0,1,0)
+	label.BackgroundTransparency = 1
+	label.Text = name
+	label.TextColor3 = Color3.fromRGB(255,255,255)
+	label.TextScaled = true
+	label.Font = Enum.Font.SourceSans
+
+	local toggle = Instance.new("TextButton")
+	toggle.Parent = frame
+	toggle.Size = UDim2.new(0.3,0,1,0)
+	toggle.Position = UDim2.new(0.7,0,0,0)
+	toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	toggle.TextColor3 = Color3.fromRGB(255,255,255)
+	toggle.Text = "OFF"
+
+	local active = false
+	toggle.MouseButton1Click:Connect(function()
+		active = not active
+		toggle.Text = active and "ON" or "OFF"
+		if callback then
+			pcall(callback,active)
+		end
+	end)
+end
+
+-- ===== Tạo danh sách các tộc / tính năng =====
+CreateToggle("1. Angle v4", mainFrame, function(state)
+	print("Angle v4:", state)
+	-- Kích hoạt feature angle v4
+end)
+
+CreateToggle("2. Dragon v4", mainFrame, function(state)
+	print("Dragon v4:", state)
+	-- Kích hoạt dragon v4
+end)
+
+CreateToggle("3. Tộc quỷ v4", mainFrame, function(state)
+	print("Tộc quỷ v4:", state)
+end)
+
+CreateToggle("4. Tộc fish v4", mainFrame, function(state)
+	print("Tộc fish v4:", state)
+end)
+
+CreateToggle("5. Tộc crybog v4", mainFrame, function(state)
+	print("Tộc crybog v4:", state)
+end)
+
+CreateToggle("6. Tộc thỏ v4", mainFrame, function(state)
+	print("Tộc thỏ v4:", state)
+end)
+
+-- ===== Giao diện gọn, menu bên trái, icon nhỏ =====
+ScreenGui.Enabled = true
