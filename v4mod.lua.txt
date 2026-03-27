@@ -1,0 +1,116 @@
+-- ===== GOLD V4 MOD HUB DEMO =====
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local cam = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+-- ===== ScreenGui + Icon nhỏ =====
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local icon = Instance.new("ImageButton", ScreenGui)
+icon.Size = UDim2.new(0,40,0,40)
+icon.Position = UDim2.new(0.02,0,0.05,0)
+icon.BackgroundColor3 = Color3.fromRGB(255,215,0)
+icon.Image = "rbxassetid://15059956542"
+
+-- ===== Bảng chức năng bên phải =====
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0,250,0,400)
+frame.Position = UDim2.new(0.1,0,0.05,0)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Visible = false
+
+-- Title
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,40)
+title.Text = "Tộc V4 HUB"
+title.TextScaled = true
+title.TextColor3 = Color3.fromRGB(255,215,0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.SourceSansBold
+
+-- Toggle function
+local function AddToggle(name, callback, ypos)
+    local f = Instance.new("Frame", frame)
+    f.Size = UDim2.new(1,-10,0,35)
+    f.Position = UDim2.new(0,5,0,40 + (ypos-1)*40)
+    f.BackgroundTransparency = 1
+
+    local label = Instance.new("TextLabel", f)
+    label.Size = UDim2.new(0.7,0,1,0)
+    label.Text = name
+    label.TextColor3 = Color3.fromRGB(255,255,255)
+    label.BackgroundTransparency = 1
+    label.TextScaled = true
+    label.Font = Enum.Font.SourceSans
+
+    local toggle = Instance.new("TextButton", f)
+    toggle.Size = UDim2.new(0.3,0,1,0)
+    toggle.Position = UDim2.new(0.7,0,0,0)
+    toggle.Text = "OFF"
+    toggle.TextColor3 = Color3.fromRGB(255,255,255)
+    toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+
+    local active = false
+    toggle.MouseButton1Click:Connect(function()
+        active = not active
+        toggle.Text = active and "ON" or "OFF"
+        if callback then pcall(callback, active) end
+    end)
+end
+
+-- ===== Add tộc với hiệu ứng thức tỉnh =====
+AddToggle("Tộc Quỷ V4", function(active)
+    if active then
+        -- 6 particle đen đỏ xoay quanh
+        for i=1,6 do
+            local p = Instance.new("Part", workspace)
+            p.Size = Vector3.new(2,2,2)
+            p.Anchored = true
+            p.Material = Enum.Material.Neon
+            p.Color = Color3.fromRGB(50,0,0)
+            p.CFrame = hrp.CFrame * CFrame.new(math.random(-5,5),0,math.random(-5,5))
+            local pe = Instance.new("ParticleEmitter", p)
+            pe.Rate = 150
+            pe.Speed = NumberRange.new(2,5)
+            pe.Size = NumberSequence.new(2)
+            pe.Color = ColorSequence.new(Color3.fromRGB(50,0,0))
+            task.delay(5,function() p:Destroy() end)
+        end
+    end
+end, 1)
+
+AddToggle("Tộc Dragon V4", function(active)
+    if active then
+        local aura = Instance.new("ParticleEmitter", hrp)
+        aura.Rate = 200
+        aura.Lifetime = NumberRange.new(1,2)
+        aura.Speed = NumberRange.new(10,15)
+        aura.Size = NumberSequence.new(3)
+        aura.Color = ColorSequence.new(Color3.fromRGB(255,165,0))
+    end
+end, 2)
+
+AddToggle("Tộc Angle V4", function(active)
+    if active then
+        local aura = Instance.new("ParticleEmitter", hrp)
+        aura.Rate = 150
+        aura.Lifetime = NumberRange.new(1,2)
+        aura.Speed = NumberRange.new(5,10)
+        aura.Size = NumberSequence.new(2.5)
+        aura.Color = ColorSequence.new(Color3.fromRGB(255,255,255))
+    end
+end, 3)
+
+AddToggle("Tộc Fish V4", function() end, 4)
+AddToggle("Tộc Crybog V4", function() end, 5)
+AddToggle("Tộc Thỏ V4", function() end, 6)
+
+-- ===== Bấm icon để hiện / ẩn bảng chức năng =====
+icon.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
