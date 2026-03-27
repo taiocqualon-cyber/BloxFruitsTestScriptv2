@@ -1,0 +1,192 @@
+repeat task.wait() until game:IsLoaded()
+
+-- ===== SERVICES =====
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+
+-- ===== UI =====
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+
+local status = Instance.new("TextLabel", gui)
+status.Size = UDim2.new(0,350,0,50)
+status.Position = UDim2.new(0,10,0.1,0)
+status.BackgroundColor3 = Color3.fromRGB(0,0,0)
+status.BackgroundTransparency = 0.3
+status.TextColor3 = Color3.fromRGB(255,255,255)
+status.TextStrokeTransparency = 0
+status.TextScaled = true
+status.Font = Enum.Font.GothamBold
+status.Text = "🔥 ABSOLUTE GOD AI LOADING..."
+
+local function setStatus(msg)
+	status.Text = msg
+	task.wait(0.2)
+end
+
+-- ===== GOD FRUITS =====
+local GOD = {
+	Leopard=true,Dragon=true,Kitsune=true,
+	Dough=true,Venom=true,Spirit=true
+}
+
+local function isGod(name)
+	for k,_ in pairs(GOD) do
+		if string.find(string.lower(name),string.lower(k)) then
+			return true
+		end
+	end
+	return false
+end
+
+-- ===== ESP =====
+local function ESP(obj)
+	if obj:FindFirstChild("ESP") then return end
+	local bill = Instance.new("BillboardGui", obj)
+	bill.Name = "ESP"
+	bill.Size = UDim2.new(0,100,0,40)
+	bill.AlwaysOnTop = true
+
+	local txt = Instance.new("TextLabel", bill)
+	txt.Size = UDim2.new(1,0,1,0)
+	txt.BackgroundTransparency = 1
+	txt.TextColor3 = Color3.fromRGB(255,0,0)
+	txt.TextScaled = true
+	txt.Text = "🔥 "..obj.Name
+end
+
+-- ===== TELEPORT =====
+local function tp(pos)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if root then root.CFrame = CFrame.new(pos) end
+end
+
+-- ===== HOLD =====
+local function hold(tool)
+	local char = player.Character
+	if not char then return end
+	tool.Parent = char
+	task.wait(0.3)
+	tool.Parent = player.Backpack
+	task.wait(0.3)
+	tool.Parent = char
+end
+
+-- ===== AI DATA =====
+local serverID = game.JobId
+local score = 0
+local scans = 0
+local timeInServer = 0
+local predictChance = 0
+
+-- timer
+task.spawn(function()
+	while true do
+		task.wait(5)
+		timeInServer += 5
+	end
+end)
+
+-- ===== AI UPDATE =====
+local function updateAI(foundGod, foundAny)
+	if foundGod then score += 2
+	elseif foundAny then score += 1
+	else score -= 1 end
+
+	scans += 1
+end
+
+-- ===== PREDICT =====
+local function updatePredict(foundAny, foundGod)
+	predictChance = math.clamp(timeInServer / 2, 0, 100)
+
+	if foundAny then predictChance += 10 end
+	if foundGod then predictChance += 25 end
+
+	predictChance = math.clamp(predictChance,0,100)
+
+	setStatus("📊 Score:"..score.." | Chance:"..math.floor(predictChance).."%")
+end
+
+-- ===== DECISION =====
+local function shouldHop()
+	if scans >= 6 and score <= -2 then return true end
+	if timeInServer > 60 and predictChance < 30 then return true end
+	return false
+end
+
+-- ===== HOP =====
+local visited = {}
+
+local function hop()
+	setStatus("🔁 Tìm server mới...")
+
+	local data = HttpService:JSONDecode(
+		game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+	)
+
+	for _,v in pairs(data.data) do
+		if v.playing >= 8 and v.playing < v.maxPlayers and not visited[v.id] then
+			visited[v.id] = true
+
+			setStatus("🚀 Server: "..v.playing.." người")
+
+			TeleportService:TeleportToPlaceInstance(game.PlaceId,v.id,player)
+			return
+		end
+	end
+
+	TeleportService:Teleport(game.PlaceId)
+end
+
+-- ===== MAIN =====
+task.spawn(function()
+	while true do
+		local foundGod = false
+		local foundAny = false
+
+		for i = 1, 12 do -- scan lâu
+			task.wait(2)
+
+			for _,v in pairs(workspace:GetDescendants()) do
+				if v:IsA("Tool") and v:FindFirstChild("Handle") then
+					
+					foundAny = true
+
+					if isGod(v.Name) then
+						foundGod = true
+
+						setStatus("🔥 GOD: "..v.Name)
+
+						ESP(v)
+						tp(v.Handle.Position + Vector3.new(0,2,0))
+						task.wait(1)
+						hold(v)
+					end
+				end
+			end
+
+			-- nếu thấy trái → reset farm tiếp
+			if foundGod then
+				setStatus("😈 Server may mắn → tiếp tục")
+				foundGod = false
+				i = 0
+			end
+		end
+
+		updateAI(foundGod, foundAny)
+		updatePredict(foundAny, foundGod)
+
+		if shouldHop() then
+			setStatus("💀 Server xui → đổi")
+			hop()
+			break
+		else
+			setStatus("😈 Server tốt → farm tiếp")
+		end
+	end
+end)
