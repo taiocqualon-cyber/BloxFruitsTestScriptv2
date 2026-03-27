@@ -1,0 +1,91 @@
+repeat wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local plr = Players.LocalPlayer
+
+-- ===== VỊ TRÍ SEA 2 =====
+local ISLANDS = {
+    Vector3.new(-385, 73, 300),      -- Cafe
+    Vector3.new(-2600, 73, -5000),   -- Green Zone
+    Vector3.new(1200, 150, -1500),   -- Snow Mountain
+    Vector3.new(-5500, 100, -2500),  -- Hot & Cold
+    Vector3.new(-300, 100, -1000)    -- Factory
+}
+
+-- ===== HRP =====
+local function getHRP()
+    local char = plr.Character or plr.CharacterAdded:Wait()
+    return char:WaitForChild("HumanoidRootPart")
+end
+
+-- ===== TÌM RƯƠNG =====
+local function getChests()
+    local list = {}
+
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and string.find(v.Name,"Chest") then
+            table.insert(list,v)
+        end
+    end
+
+    return list
+end
+
+-- ===== LẤY POS =====
+local function getPos(chest)
+    for _,v in pairs(chest:GetDescendants()) do
+        if v:IsA("BasePart") then
+            return v.Position
+        end
+    end
+end
+
+-- ===== TWEEN =====
+local function tweenTo(pos)
+    local hrp = getHRP()
+    local dist = (hrp.Position - pos).Magnitude
+
+    local tween = TweenService:Create(
+        hrp,
+        TweenInfo.new(dist/180, Enum.EasingStyle.Linear),
+        {CFrame = CFrame.new(pos)}
+    )
+
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+-- ===== FARM 1 KHU =====
+local function farmArea()
+    local chests = getChests()
+
+    for _,c in pairs(chests) do
+        local pos = getPos(c)
+
+        if pos then
+            print("💰 Nhặt rương...")
+            tweenTo(pos + Vector3.new(0,3,0))
+            wait(0.3)
+        end
+    end
+end
+
+-- ===== MAIN LOOP =====
+while true do
+    for i,pos in pairs(ISLANDS) do
+
+        print("🚀 Đang tới đảo "..i)
+
+        getHRP().CFrame = CFrame.new(pos)
+        wait(2)
+
+        print("💰 Farm đảo "..i)
+        farmArea()
+
+        wait(1)
+    end
+
+    print("🔁 Lặp lại vòng farm")
+end
