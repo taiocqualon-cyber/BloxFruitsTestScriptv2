@@ -1,0 +1,147 @@
+-- 🌟 GOD FRUIT HUNTER AI – ALL SEA + FIX HOP
+repeat task.wait() until game:IsLoaded()
+
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+local Workspace = game:GetService("Workspace")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+
+-- ===== TARGET FRUITS =====
+local TargetFruits = {
+	"kitsune","yeti","dough","t-rex","control",
+	"tiger","mammoth","spirit","venom","gas",
+	"gravity","portal","blizzard","pain"
+}
+
+-- ===== GUI FIX (HIỆN 100%) =====
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "GOD_FRUIT_HUNTER"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game:GetService("CoreGui") -- dùng CoreGui để luôn hiện
+
+local icon = Instance.new("ImageButton", ScreenGui)
+icon.Size = UDim2.new(0,45,0,45)
+icon.Position = UDim2.new(0.02,0,0.1,0)
+icon.Image = "rbxassetid://15059956542"
+icon.BackgroundColor3 = Color3.fromRGB(255,215,0)
+
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0,300,0,180)
+frame.Position = UDim2.new(0,-350,0.1,0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,0,1,0)
+status.TextColor3 = Color3.fromRGB(255,255,255)
+status.BackgroundTransparency = 1
+status.TextWrapped = true
+status.Text = "🚀 GOD FRUIT HUNTER READY"
+
+-- menu trượt
+local open = false
+icon.MouseButton1Click:Connect(function()
+	open = not open
+	TweenService:Create(frame, TweenInfo.new(0.4), {
+		Position = open and UDim2.new(0.02,0,0.1,0) or UDim2.new(0,-350,0.1,0)
+	}):Play()
+end)
+
+-- ===== CHECK FRUIT =====
+local function IsRealFruit(obj)
+	if not obj:IsA("Tool") then return false end
+	if not obj:FindFirstChild("Handle") then return false end
+	if not string.find(string.lower(obj.Name),"fruit") then return false end
+	return true
+end
+
+local function IsTargetFruit(name)
+	name = string.lower(name)
+	for _,f in pairs(TargetFruits) do
+		if string.find(name,f) then
+			return true
+		end
+	end
+	return false
+end
+
+local function FindTargetFruits()
+	local result = {}
+	for _,v in pairs(Workspace:GetDescendants()) do
+		if IsRealFruit(v) and IsTargetFruit(v.Name) then
+			table.insert(result,v)
+		end
+	end
+	return result
+end
+
+-- ===== HOP SERVER FIX 100% =====
+local visited = {}
+local cursor = ""
+
+local function HopServer()
+	status.Text = "🌐 Đang tìm server mới..."
+	
+	local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100"
+	if cursor ~= "" then
+		url = url.."&cursor="..cursor
+	end
+
+	local success, result = pcall(function()
+		return game:HttpGet(url)
+	end)
+
+	if success then
+		local data = HttpService:JSONDecode(result)
+		cursor = data.nextPageCursor or ""
+
+		for _,v in pairs(data.data or {}) do
+			if v.playing < v.maxPlayers and not visited[v.id] then
+				visited[v.id] = true
+				status.Text = "⏩ Hop: "..v.id
+				task.wait(0.2)
+				TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+				return
+			end
+		end
+	else
+		status.Text = "❌ Lỗi API, retry..."
+	end
+
+	-- nếu hết server → reset lại
+	if cursor == "" then
+		visited = {}
+	end
+end
+
+-- ===== MAIN LOOP =====
+task.spawn(function()
+	while true do
+		local fruits = FindTargetFruits()
+
+		if #fruits > 0 then
+			for _,fruit in ipairs(fruits) do
+				if fruit and fruit.Parent then
+					status.Text = "⚡ Nhặt: "..fruit.Name
+					hrp.CFrame = fruit.Handle.CFrame + Vector3.new(0,3,0)
+
+					local cd = fruit:FindFirstChildOfClass("ClickDetector")
+					if cd then
+						fireclickdetector(cd)
+					end
+
+					task.wait(1)
+				end
+			end
+		else
+			status.Text = "🔎 Không có trái → hop server"
+			HopServer()
+			task.wait(3) -- đợi load server
+		end
+
+		task.wait(0.5)
+	end
+end)
