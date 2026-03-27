@@ -1,0 +1,117 @@
+-- === MOON HUNTER AI ===
+local player = game.Players.LocalPlayer
+local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+-- ===== GUI ICON =====
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+
+local icon = Instance.new("ImageButton", ScreenGui)
+icon.Size = UDim2.new(0,40,0,40)
+icon.Position = UDim2.new(0.02,0,0.1,0)
+icon.BackgroundColor3 = Color3.fromRGB(255,215,0)
+icon.Image = "rbxassetid://15059956542"
+
+-- ===== MAIN UI =====
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0,260,0,150)
+frame.Position = UDim2.new(0.1,0,0.1,0)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Visible = false
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "MOON HUNTER AI 🌕"
+title.TextColor3 = Color3.fromRGB(255,215,0)
+title.BackgroundTransparency = 1
+title.TextScaled = true
+
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,0,0,40)
+status.Position = UDim2.new(0,0,0.3,0)
+status.Text = "Loading..."
+status.TextColor3 = Color3.fromRGB(255,255,255)
+status.BackgroundTransparency = 1
+status.TextWrapped = true
+
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(0.5,0,0,30)
+toggle.Position = UDim2.new(0.25,0,0.7,0)
+toggle.Text = "OFF"
+toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+toggle.TextColor3 = Color3.fromRGB(255,255,255)
+
+icon.MouseButton1Click:Connect(function()
+	frame.Visible = not frame.Visible
+end)
+
+-- ===== CHECK MOON =====
+local function GetMoonPhase()
+	local clock = Lighting.ClockTime
+
+	if clock >= 0 and clock < 4 then
+		return 4, "🌕 Full Moon"
+	elseif clock >= 4 and clock < 8 then
+		return 3, "🌖 Sắp Full Moon"
+	elseif clock >= 8 and clock < 16 then
+		return 2, "🌗 Còn lâu"
+	else
+		return 1, "🌘 Còn lâu"
+	end
+end
+
+-- ===== TIME TO FULL MOON =====
+local function TimeToFullMoon()
+	local clock = Lighting.ClockTime
+	local timeLeft = (24 - clock) % 24
+	return math.floor(timeLeft*60) .. "s"
+end
+
+-- ===== SERVER HOP =====
+local function HopServer()
+	local servers = {}
+	local req = game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")
+	local data = HttpService:JSONDecode(req)
+
+	for _,v in pairs(data.data) do
+		if v.playing < v.maxPlayers then
+			table.insert(servers, v.id)
+		end
+	end
+
+	if #servers > 0 then
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1,#servers)], player)
+	end
+end
+
+-- ===== MAIN LOOP =====
+local Active = false
+
+toggle.MouseButton1Click:Connect(function()
+	Active = not Active
+	toggle.Text = Active and "ON" or "OFF"
+
+	if Active then
+		task.spawn(function()
+			while Active do
+				local level, text = GetMoonPhase()
+				local timeLeft = TimeToFullMoon()
+
+				status.Text = "Moon: "..text.."\nNext Full: "..timeLeft
+
+				if level >= 3 then
+					-- 🌖 hoặc 🌕 thì giữ server
+					status.Text = status.Text .. "\n✅ Server tốt!"
+				else
+					-- 🌘 🌗 thì hop
+					status.Text = status.Text .. "\n🔄 Đang đổi server..."
+					HopServer()
+				end
+
+				task.wait(5)
+			end
+		end)
+	end
+end)
