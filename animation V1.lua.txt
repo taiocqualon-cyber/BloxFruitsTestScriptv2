@@ -1,0 +1,59 @@
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local cam = workspace.CurrentCamera
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+
+-- 1️⃣ RESET CAMERA
+cam.CameraType = Enum.CameraType.Scriptable
+
+-- 2️⃣ CHUI LÊN TỪ ĐẤT
+hrp.CFrame = hrp.CFrame - Vector3.new(0,15,0)
+local upTween = TweenService:Create(hrp, TweenInfo.new(2, Enum.EasingStyle.Sine), {CFrame = hrp.CFrame + Vector3.new(0,15,0)})
+upTween:Play()
+
+-- 3️⃣ CREATE “CHAIR” NGỒI NGẦU
+local chair = Instance.new("Part", workspace)
+chair.Anchored = true
+chair.CanCollide = false
+chair.Transparency = 1
+chair.Size = Vector3.new(2,1,2)
+chair.CFrame = hrp.CFrame - Vector3.new(0,3,0)
+hrp.CFrame = chair.CFrame + Vector3.new(0,2,0)
+
+-- 4️⃣ CAMERA ZOOM DOMAIN
+local startCam = hrp.Position + Vector3.new(0,15,25)
+local endCam = hrp.Position + Vector3.new(0,5,10)
+cam.CFrame = CFrame.new(startCam, hrp.Position)
+
+local camTween = TweenService:Create(cam, TweenInfo.new(3, Enum.EasingStyle.Quad), {CFrame = CFrame.new(endCam, hrp.Position)})
+camTween:Play()
+
+-- 5️⃣ AURA & FLASH
+local cc = Instance.new("ColorCorrectionEffect", Lighting)
+cc.TintColor = Color3.fromRGB(255,215,0)
+
+task.spawn(function()
+	for i=1,2 do
+		cc.Enabled = true
+		task.wait(0.3)
+		cc.Enabled = false
+		task.wait(0.3)
+	end
+	cc:Destroy()
+end)
+
+-- 6️⃣ SPIN CAMERA 360 QUANH NHÂN VẬT
+task.spawn(function()
+	for i=1,120 do
+		task.wait(0.02)
+		local angle = math.rad(i*3)
+		local offset = Vector3.new(math.cos(angle)*10,5,math.sin(angle)*10)
+		cam.CFrame = CFrame.new(hrp.Position + offset, hrp.Position)
+	end
+end)
+
+-- 7️⃣ HOVER NHẸ + NGỒI NGẦU
+local hoverTween = TweenService:Create(hrp, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {CFrame = hrp.CFrame + Vector3.new(0,1,0)})
+hoverTween:Play()
