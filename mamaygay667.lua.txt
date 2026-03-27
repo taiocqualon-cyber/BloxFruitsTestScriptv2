@@ -1,0 +1,140 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+
+-- ===== UI =====
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local status = Instance.new("TextLabel", gui)
+status.Size = UDim2.new(0,300,0,40)
+status.Position = UDim2.new(0,10,0.1,0)
+status.BackgroundColor3 = Color3.fromRGB(20,20,20)
+status.TextColor3 = Color3.new(1,1,1)
+status.TextScaled = true
+status.Text = "🔥 GOD MODE LOADING..."
+
+-- ===== FRUIT LIST =====
+local GOD = {
+	Leopard=true,Dragon=true,Kitsune=true,
+	Dough=true,Venom=true,Spirit=true
+}
+
+local function isGod(name)
+	for k,_ in pairs(GOD) do
+		if string.find(string.lower(name),string.lower(k)) then
+			return true
+		end
+	end
+	return false
+end
+
+-- ===== ESP =====
+local function ESP(obj)
+	if obj:FindFirstChild("ESP") then return end
+
+	local bill = Instance.new("BillboardGui", obj)
+	bill.Name = "ESP"
+	bill.Size = UDim2.new(0,100,0,40)
+	bill.AlwaysOnTop = true
+
+	local txt = Instance.new("TextLabel", bill)
+	txt.Size = UDim2.new(1,0,1,0)
+	txt.BackgroundTransparency = 1
+	txt.TextColor3 = Color3.fromRGB(255,0,0)
+	txt.TextScaled = true
+	txt.Text = "🔥 "..obj.Name
+end
+
+-- ===== TWEEN =====
+local function tweenTo(pos)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local dist = (root.Position - pos).Magnitude
+	local time = dist / 120
+
+	local tween = TweenService:Create(root,
+		TweenInfo.new(time,Enum.EasingStyle.Linear),
+		{CFrame = CFrame.new(pos)}
+	)
+	tween:Play()
+end
+
+-- ===== AUTO HOLD =====
+local function hold(tool)
+	local char = player.Character
+	if not char then return end
+
+	tool.Parent = char
+	task.wait(0.3)
+	tool.Parent = player.Backpack
+	task.wait(0.3)
+	tool.Parent = char
+end
+
+-- ===== HOP SERVER ≥8 =====
+local visited = {}
+
+local function hop()
+	status.Text = "🔁 Tìm server ≥8 người..."
+
+	local data = HttpService:JSONDecode(
+		game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+	)
+
+	for _,v in pairs(data.data) do
+		if v.playing >= 8 and v.playing <= 12 and not visited[v.id] then
+			visited[v.id] = true
+
+			status.Text = "🚀 Server: "..v.playing.." người"
+
+			TeleportService:TeleportToPlaceInstance(
+				game.PlaceId,
+				v.id,
+				player
+			)
+			return
+		end
+	end
+
+	status.Text = "⚠️ Không có server phù hợp"
+	TeleportService:Teleport(game.PlaceId)
+end
+
+-- ===== MAIN =====
+task.spawn(function()
+	while true do
+		task.wait(1.5)
+
+		local found = false
+
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("Tool") and v:FindFirstChild("Handle") then
+				
+				if isGod(v.Name) then
+					found = true
+
+					status.Text = "🔥 Tìm thấy: "..v.Name
+
+					ESP(v)
+					tweenTo(v.Handle.Position + Vector3.new(0,2,0))
+
+					task.wait(1)
+					hold(v)
+				end
+			end
+		end
+
+		if not found then
+			status.Text = "❌ Không có trái → đổi server"
+			hop()
+			break
+		end
+	end
+end)
