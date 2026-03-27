@@ -1,0 +1,151 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+
+-- ===== UI =====
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+
+local status = Instance.new("TextLabel", gui)
+status.Size = UDim2.new(0,350,0,50)
+status.Position = UDim2.new(0,10,0.1,0)
+status.BackgroundColor3 = Color3.fromRGB(0,0,0)
+status.BackgroundTransparency = 0.3
+status.TextColor3 = Color3.fromRGB(255,255,255)
+status.TextStrokeTransparency = 0
+status.TextScaled = true
+status.Font = Enum.Font.GothamBold
+status.TextTransparency = 0
+status.Text = "🔥 GOD MEMORY AI MAX LOADING..."
+
+local function setStatus(msg)
+	status.Text = msg
+	task.wait(0.2)
+end
+
+-- ===== GOD FRUITS =====
+local GOD = {Leopard=true,Dragon=true,Kitsune=true,Dough=true,Venom=true,Spirit=true}
+local function isGod(name)
+	for k,_ in pairs(GOD) do
+		if string.find(string.lower(name),string.lower(k)) then
+			return true
+		end
+	end
+	return false
+end
+
+-- ===== ESP =====
+local function ESP(obj)
+	if obj:FindFirstChild("ESP") then return end
+	local bill = Instance.new("BillboardGui", obj)
+	bill.Name = "ESP"
+	bill.Size = UDim2.new(0,100,0,40)
+	bill.AlwaysOnTop = true
+	local txt = Instance.new("TextLabel", bill)
+	txt.Size = UDim2.new(1,0,1,0)
+	txt.BackgroundTransparency = 1
+	txt.TextColor3 = Color3.fromRGB(255,0,0)
+	txt.TextScaled = true
+	txt.Text = "🔥 "..obj.Name
+end
+
+-- ===== TELEPORT =====
+local function tp(pos)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if root then root.CFrame = CFrame.new(pos) end
+end
+
+-- ===== AUTO HOLD =====
+local function hold(tool)
+	local char = player.Character
+	if not char then return end
+	tool.Parent = char
+	task.wait(0.3)
+	tool.Parent = player.Backpack
+	task.wait(0.3)
+	tool.Parent = char
+end
+
+-- ===== MEMORY AI =====
+local serverScore = {}
+local scanCount = {}
+
+local function updateAI(serverID, foundGod, foundAny)
+	serverScore[serverID] = serverScore[serverID] or 0
+	scanCount[serverID] = scanCount[serverID] or 0
+
+	if foundGod then serverScore[serverID] = serverScore[serverID]+2
+	elseif foundAny then serverScore[serverID] = serverScore[serverID]+1
+	else serverScore[serverID] = serverScore[serverID]-1 end
+
+	scanCount[serverID] = scanCount[serverID]+1
+	setStatus("📊 Server "..serverID.." | Score:"..serverScore[serverID].." | Scan:"..scanCount[serverID])
+end
+
+local function shouldHop(serverID)
+	return scanCount[serverID] >= 5 and serverScore[serverID] <= -2
+end
+
+-- ===== HOP SERVER ≥8 NOT FULL =====
+local visited = {}
+local function hop()
+	setStatus("🔁 Tìm server ≥8 người, không full...")
+
+	local data = HttpService:JSONDecode(
+		game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+	)
+
+	for _,v in pairs(data.data) do
+		if v.playing >= 8 and v.playing < v.maxPlayers and not visited[v.id] then
+			visited[v.id] = true
+			setStatus("🚀 Server: "..v.playing.."/"..v.maxPlayers.." | ID:"..v.id)
+			TeleportService:TeleportToPlaceInstance(game.PlaceId,v.id,player)
+			return
+		end
+	end
+
+	setStatus("⚠️ Không có server phù hợp → random")
+	TeleportService:Teleport(game.PlaceId)
+end
+
+-- ===== MAIN LOOP =====
+task.spawn(function()
+	while true do
+		local serverID = game.JobId
+		local foundGod = false
+		local foundAny = false
+
+		for i=1,5 do
+			task.wait(2)
+			for _,v in pairs(workspace:GetDescendants()) do
+				if v:IsA("Tool") and v:FindFirstChild("Handle") then
+					foundAny = true
+					if isGod(v.Name) then
+						foundGod = true
+						setStatus("🔥 GOD FRUIT: "..v.Name)
+						ESP(v)
+						tp(v.Handle.Position + Vector3.new(0,2,0))
+						task.wait(1)
+						hold(v)
+					end
+				end
+			end
+		end
+
+		updateAI(serverID,foundGod,foundAny)
+
+		if shouldHop(serverID) then
+			setStatus("💀 Server xui → hop")
+			hop()
+			break
+		else
+			setStatus("😈 Server tốt → tiếp tục farm")
+		end
+	end
+end)
