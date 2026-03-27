@@ -1,0 +1,102 @@
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local cam = workspace.CurrentCamera
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+
+local DomainActive = true -- bật animation ngay khi chạy
+
+if DomainActive then
+    -- ===== 0️⃣ Reset camera =====
+    cam.CameraType = Enum.CameraType.Scriptable
+    cam.CFrame = CFrame.new(hrp.Position + Vector3.new(0,5,15), hrp.Position)
+
+    -- ===== 1️⃣ Hover + Aura đỏ vàng =====
+    local hoverTween = TweenService:Create(hrp, TweenInfo.new(10, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+        CFrame = hrp.CFrame + Vector3.new(0,2,0)
+    })
+    hoverTween:Play()
+
+    local aura = Instance.new("ParticleEmitter", hrp)
+    aura.Rate = 100
+    aura.Lifetime = NumberRange.new(1,2)
+    aura.Speed = NumberRange.new(2,5)
+    aura.Size = NumberSequence.new(2.5)
+    aura.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255,215,0))})
+
+    -- Mắt đỏ
+    local eyes = Instance.new("PointLight", hrp)
+    eyes.Color = Color3.fromRGB(255,0,0)
+    eyes.Range = 5
+    eyes.Brightness = 2
+
+    -- ===== 2️⃣ Sever rung chuyển =====
+    task.spawn(function()
+        for i = 1,30 do
+            RunService.RenderStepped:Wait()
+            local shake = Vector3.new(math.random(-2,2)/2, math.random(-2,2)/2, math.random(-2,2)/2)
+            cam.CFrame = CFrame.new(hrp.Position + Vector3.new(0,10,20) + shake, hrp.Position)
+        end
+    end)
+
+    task.wait(1.5)
+
+    -- ===== 3️⃣ Nhân vật bay lên cao =====
+    local flyTween = TweenService:Create(hrp, TweenInfo.new(3, Enum.EasingStyle.Sine), {
+        CFrame = hrp.CFrame + Vector3.new(0,50,0)
+    })
+    flyTween:Play()
+    task.wait(3)
+
+    -- ===== 4️⃣ Tạo lỗ đen xung quanh =====
+    local blackhole = Instance.new("Part", workspace)
+    blackhole.Size = Vector3.new(1,1,1)
+    blackhole.Position = hrp.Position
+    blackhole.Anchored = true
+    blackhole.Material = Enum.Material.Neon
+    blackhole.Color = Color3.fromRGB(0,0,0)
+    blackhole.Transparency = 0.5
+
+    local bhEmitter = Instance.new("ParticleEmitter", blackhole)
+    bhEmitter.Rate = 200
+    bhEmitter.Lifetime = NumberRange.new(1,2)
+    bhEmitter.Speed = NumberRange.new(5,10)
+    bhEmitter.Size = NumberSequence.new({NumberSequenceKeypoint.new(0,5), NumberSequenceKeypoint.new(1,0)})
+    bhEmitter.Color = ColorSequence.new(Color3.fromRGB(0,0,0))
+
+    -- ===== 5️⃣ Nén / Bóp năng lượng =====
+    task.spawn(function()
+        for i=1,50 do
+            blackhole.Size = blackhole.Size + Vector3.new(0.5,0.5,0.5)
+            task.wait(0.03)
+        end
+    end)
+    task.wait(1.5)
+
+    -- ===== 6️⃣ Nổ cực mạnh =====
+    for i=1,50 do
+        local part = Instance.new("Part", workspace)
+        part.Size = Vector3.new(2,2,2)
+        part.Position = hrp.Position
+        part.Anchored = false
+        part.Material = Enum.Material.Neon
+        part.Color = Color3.fromRGB(255,0,0)
+        part.Velocity = Vector3.new(math.random(-100,100), math.random(50,100), math.random(-100,100))
+        task.delay(3, function() part:Destroy() end)
+    end
+
+    blackhole:Destroy()
+
+    -- ===== 7️⃣ Camera cinematic 360 quanh nhân vật =====
+    task.spawn(function()
+        local t0 = tick()
+        while DomainActive do
+            RunService.RenderStepped:Wait()
+            local t = tick() - t0
+            local offset = Vector3.new(math.cos(t*2)*30,15,math.sin(t*2)*30)
+            cam.CFrame = CFrame.new(hrp.Position + offset, hrp.Position)
+        end
+    end)
+end
