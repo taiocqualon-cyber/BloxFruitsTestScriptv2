@@ -1,0 +1,164 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+
+-- ===== CONFIG =====
+local AUTO = true
+local SCAN_SPEED = 1.5 -- càng thấp càng nhanh
+local VISITED = {} -- chống trùng server
+
+-- ===== TRÁI CỰC HIẾM =====
+local GOD_FRUITS = {
+	["Leopard"] = true,
+	["Dragon"] = true,
+	["Kitsune"] = true,
+	["Dough"] = true,
+	["Venom"] = true,
+	["Spirit"] = true
+}
+
+-- ===== CHECK FRUIT =====
+local function isGodFruit(name)
+	name = string.lower(name)
+	for f,_ in pairs(GOD_FRUITS) do
+		if string.find(name, string.lower(f)) then
+			return true
+		end
+	end
+	return false
+end
+
+-- ===== TELEPORT SERVER MỚI =====
+local function hopServer()
+	local servers = HttpService:JSONDecode(game:HttpGet(
+		"https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+	))
+
+	for _,v in pairs(servers.data) do
+		if v.playing < v.maxPlayers and not VISITED[v.id] then
+			VISITED[v.id] = true
+			TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+			task.wait(2)
+		end
+	end
+
+	-- fallback
+	TeleportService:Teleport(game.PlaceId, player)
+end
+
+-- ===== MAIN AUTO =====
+task.spawn(function()
+	while AUTO do
+		task.wait(SCAN_SPEED)
+
+		local found = false
+
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("Tool") and v:FindFirstChild("Handle") then
+				
+				if isGodFruit(v.Name) then
+					found = true
+
+					local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+					if root then
+						root.CFrame = v.Handle.CFrame + Vector3.new(0,2,0)
+					end
+
+					print("🔥 GOD FRUIT:", v.Name)
+					task.wait(2)
+				end
+			end
+		end
+
+		if not found then
+			print("❌ Không có trái xịn → HOP SERVER")
+			hopServer()
+		end
+	end
+end)-- ===== INTRO CINEMATIC V5 =====
+local player = game.Players.LocalPlayer
+local cam = workspace.CurrentCamera
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+-- GUI TEXT
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local txt = Instance.new("TextLabel", gui)
+txt.Size = UDim2.new(1,0,0.2,0)
+txt.Position = UDim2.new(0,0,0.4,0)
+txt.BackgroundTransparency = 1
+txt.TextColor3 = Color3.fromRGB(255,0,0)
+txt.TextScaled = true
+txt.TextTransparency = 1
+
+-- EFFECT DARK
+local cc = Instance.new("ColorCorrectionEffect", Lighting)
+cc.Brightness = -0.3
+
+-- PARTICLE
+local emitter = Instance.new("ParticleEmitter", root)
+emitter.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,0,0))
+}
+emitter.Rate = 100
+emitter.Speed = NumberRange.new(3)
+emitter.Enabled = true
+
+-- BAY LÊN NHẸ
+local body = Instance.new("BodyPosition", root)
+body.Position = root.Position + Vector3.new(0,10,0)
+body.MaxForce = Vector3.new(1e5,1e5,1e5)
+
+-- CAMERA ZOOM
+local startCF = cam.CFrame
+local targetCF = CFrame.new(root.Position + Vector3.new(0,5,10), root.Position)
+
+for i=0,1,0.02 do
+	cam.CFrame = cam.CFrame:Lerp(targetCF,i)
+	task.wait()
+end
+
+-- TEXT 1
+txt.Text = "ULTIMATE FRUIT HUNTER V5"
+for i=1,20 do
+	txt.TextTransparency = 1 - i/20
+	task.wait(0.05)
+end
+
+task.wait(1)
+
+-- TEXT 2
+txt.Text = "Triển khai hệ thống săn trái tối thượng..."
+task.wait(1.5)
+
+-- FLASH ĐỎ
+local flash = Instance.new("ColorCorrectionEffect", Lighting)
+flash.TintColor = Color3.fromRGB(255,0,0)
+flash.Contrast = 1
+
+task.wait(0.3)
+flash:Destroy()
+
+-- CAMERA XOAY NHẸ
+for i=-10,10,1 do
+	cam.CFrame = root.CFrame * CFrame.new(0,5,10) * CFrame.Angles(0,math.rad(i),0)
+	task.wait(0.02)
+end
+
+-- TRỞ VỀ BÌNH THƯỜNG
+TweenService:Create(cam,TweenInfo.new(0.5),{CFrame=startCF}):Play()
+
+body:Destroy()
+emitter.Enabled = false
+cc:Destroy()
+txt:Destroy()
