@@ -1,0 +1,196 @@
+-- 👹 UI FINAL 2 TAB
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui", plr.PlayerGui)
+
+-- MAIN FRAME (nền giống ảnh)
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,400,0,250)
+frame.Position = UDim2.new(0.3,0,0.5,0)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.3
+frame.Active = true
+frame.Draggable = true
+
+-- TAB BUTTONS
+local tab1 = Instance.new("TextButton", frame)
+tab1.Size = UDim2.new(0.5,0,0,40)
+tab1.Text = "ESP"
+
+local tab2 = Instance.new("TextButton", frame)
+tab2.Size = UDim2.new(0.5,0,0,40)
+tab2.Position = UDim2.new(0.5,0,0,0)
+tab2.Text = "SETTINGS"
+
+-- CONTENT FRAMES
+local espFrame = Instance.new("Frame", frame)
+espFrame.Size = UDim2.new(1,0,1,-40)
+espFrame.Position = UDim2.new(0,0,0,40)
+espFrame.BackgroundTransparency = 1
+
+local setFrame = Instance.new("Frame", frame)
+setFrame.Size = espFrame.Size
+setFrame.Position = espFrame.Position
+setFrame.BackgroundTransparency = 1
+setFrame.Visible = false
+
+-- SWITCH TAB
+tab1.MouseButton1Click:Connect(function()
+    espFrame.Visible = true
+    setFrame.Visible = false
+end)
+
+tab2.MouseButton1Click:Connect(function()
+    espFrame.Visible = false
+    setFrame.Visible = true
+end)
+
+-- ===== TOGGLE =====
+local function createToggle(parent, name, y, callback)
+    local state = false
+
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(0.9,0,0,35)
+    btn.Position = UDim2.new(0.05,0,0,y)
+    btn.BackgroundColor3 = Color3.fromRGB(30,0,0)
+    btn.Text = name.." : OFF"
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = name.." : "..(state and "ON" or "OFF")
+        btn.BackgroundColor3 = state and Color3.fromRGB(0,120,0) or Color3.fromRGB(30,0,0)
+        callback(state)
+    end)
+end
+
+-- ===== STATES =====
+local tpFruit = false
+local autoChest = false
+local autoStore = false
+local espFruit = false
+
+-- ===== ESP TAB =====
+createToggle(espFrame, "Teleport to Fruits", 10, function(v)
+    tpFruit = v
+end)
+
+createToggle(espFrame, "Auto Tween to Chest", 50, function(v)
+    autoChest = v
+end)
+
+createToggle(espFrame, "Auto Store Fruits", 90, function(v)
+    autoStore = v
+end)
+
+createToggle(espFrame, "ESP Fruits", 130, function(v)
+    espFruit = v
+end)
+
+-- ===== SETTINGS TAB =====
+createToggle(setFrame, "Fix Speed", 10, function(v)
+    if v then
+        plr.Character.Humanoid.WalkSpeed = 80
+    else
+        plr.Character.Humanoid.WalkSpeed = 16
+    end
+end)
+
+-- ===== FUNCTIONS =====
+
+local function isFruit(v)
+    return v:IsA("Tool") and v:FindFirstChild("Handle") and v.Parent == workspace
+end
+
+local function store()
+    for _,t in pairs(plr.Backpack:GetChildren()) do
+        if t:IsA("Tool") then
+            pcall(function()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StoreFruit", t.Name)
+            end)
+        end
+    end
+end
+
+local function tweenTo(pos)
+    local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local dist = (hrp.Position - pos).Magnitude
+    local tw = TweenService:Create(hrp,
+        TweenInfo.new(dist/250, Enum.EasingStyle.Linear),
+        {CFrame = CFrame.new(pos)}
+    )
+    tw:Play()
+    tw.Completed:Wait()
+    wait(0.4)
+end
+
+local function getChests()
+    local c = {}
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and string.find(v.Name:lower(),"chest") then
+            if v:FindFirstChild("HumanoidRootPart") then
+                table.insert(c, v.HumanoidRootPart)
+            end
+        end
+    end
+    return c
+end
+
+local function addESP(v)
+    if v:FindFirstChild("ESP") then return end
+
+    local name = v.Name:gsub("Fruit","")
+
+    local b = Instance.new("BillboardGui", v)
+    b.Name = "ESP"
+    b.Size = UDim2.new(0,150,0,40)
+    b.AlwaysOnTop = true
+
+    local t = Instance.new("TextLabel", b)
+    t.Size = UDim2.new(1,0,1,0)
+    t.BackgroundTransparency = 1
+    t.Text = "🍈 "..name
+    t.TextColor3 = Color3.fromRGB(255,255,0)
+end
+
+-- ===== LOOP =====
+while true do
+
+    -- ESP
+    if espFruit then
+        for _,v in pairs(workspace:GetDescendants()) do
+            if isFruit(v) then
+                addESP(v)
+            end
+        end
+    end
+
+    -- TELEPORT FRUIT
+    if tpFruit then
+        for _,v in pairs(workspace:GetDescendants()) do
+            if isFruit(v) then
+                plr.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
+                wait(0.2)
+                if autoStore then store() end
+                break
+            end
+        end
+    end
+
+    -- CHEST
+    if autoChest then
+        local chests = getChests()
+        for _,c in pairs(chests) do
+            tweenTo(c.Position + Vector3.new(0,3,0))
+        end
+    end
+
+    wait(1)
+end
