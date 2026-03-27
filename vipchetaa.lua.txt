@@ -1,0 +1,42 @@
+-- === AUTO CHEST TP PRO ===
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+local Active = false
+
+-- ===== GUI =====
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0,200,0,100)
+frame.Position = UDim2.new(0.02,0,0.05,0)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "Auto Chest PRO"
+title.TextColor3 = Color3.fromRGB(255,215,0)
+title.BackgroundTransparency = 1
+title.TextScaled = true
+
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(0.6,0,0,30)
+toggle.Position = UDim2.new(0.2,0,0.5,0)
+toggle.Text = "OFF"
+toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+toggle.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- ===== LẤY DANH SÁCH RƯƠNG =====
+local function GetAllChests()
+    local chests = {}
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and v:FindFirstChild("Chest") then
+            table.insert(chests, v)
+        end
+    end
+    return chests
+end
+
+--
