@@ -1,0 +1,90 @@
+repeat task.wait() until game:IsLoaded()
+
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+-- ===== ICON =====
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0,10,0.4,0)
+icon.Text = "🔥"
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+
+-- ===== MAIN MENU =====
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,300,0,250)
+frame.Position = UDim2.new(0,70,0.3,0)
+frame.Visible = false
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+
+icon.MouseButton1Click:Connect(function()
+	frame.Visible = not frame.Visible
+end)
+
+-- ===== TAB BUTTON =====
+local function createBtn(name,posY,func)
+	local b = Instance.new("TextButton", frame)
+	b.Size = UDim2.new(1,0,0,40)
+	b.Position = UDim2.new(0,0,0,posY)
+	b.Text = name
+	b.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	b.MouseButton1Click:Connect(func)
+end
+
+-- ===== ESP FRUIT =====
+local espOn = false
+createBtn("🍏 ESP Fruits",0,function()
+	espOn = not espOn
+	while espOn do
+		task.wait(2)
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("Tool") and v.Name:lower():find("fruit") then
+				if not v:FindFirstChild("BillboardGui") then
+					local bill = Instance.new("BillboardGui",v)
+					bill.Size = UDim2.new(0,100,0,40)
+					bill.AlwaysOnTop = true
+
+					local txt = Instance.new("TextLabel",bill)
+					txt.Size = UDim2.new(1,0,1,0)
+					txt.BackgroundTransparency = 1
+					txt.Text = "Blox Fruit 🔴"
+					txt.TextColor3 = Color3.new(1,0,0)
+				end
+			end
+		end
+	end
+end)
+
+-- ===== HOP SERVER =====
+createBtn("🔁 Hop Server",50,function()
+	game:GetService("TeleportService"):Teleport(game.PlaceId, player)
+end)
+
+-- ===== SPEED =====
+createBtn("⚡ Speed x2",100,function()
+	player.Character.Humanoid.WalkSpeed = 50
+end)
+
+-- ===== MOON STATUS =====
+createBtn("🌕 Check Moon",150,function()
+	local moon = game.Lighting.ClockTime
+	if moon > 18 then
+		print("🌖 Sắp full")
+	else
+		print("🌘 Còn lâu")
+	end
+end)
+
+-- ===== CINEMATIC =====
+createBtn("🎬 VIP Cinematic",200,function()
+	local char = player.Character
+	local root = char.HumanoidRootPart
+
+	local body = Instance.new("BodyPosition", root)
+	body.Position = root.Position + Vector3.new(0,20,0)
+	body.MaxForce = Vector3.new(1e5,1e5,1e5)
+
+	task.wait(2)
+	body:Destroy()
+end)
