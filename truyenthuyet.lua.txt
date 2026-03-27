@@ -1,0 +1,100 @@
+-- 💀 GOD FRUIT HUNTER AI – FILTER PERFECT (NO BUG)
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local Workspace = game:GetService("Workspace")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+-- ===== DANH SÁCH TRÁI CHUẨN =====
+local TargetFruits = {
+	"kitsune","yeti","dough","t-rex","control",
+	"tiger","mammoth","spirit","venom","gas",
+	"gravity","portal","blizzard","pain"
+}
+
+-- ===== CHECK FRUIT CHUẨN =====
+local function IsRealFruit(obj)
+	if not obj:IsA("Tool") then return false end
+	if not obj:FindFirstChild("Handle") then return false end
+	
+	-- phải có chữ "fruit"
+	if not string.find(string.lower(obj.Name), "fruit") then return false end
+	
+	-- phải có mesh (trái thật luôn có)
+	local handle = obj.Handle
+	if not handle:FindFirstChildOfClass("Mesh") then return false end
+	
+	return true
+end
+
+-- ===== CHECK TRÁI TARGET =====
+local function IsTargetFruit(name)
+	name = string.lower(name)
+	for _,fruit in pairs(TargetFruits) do
+		if string.find(name, fruit) then
+			return true
+		end
+	end
+	return false
+end
+
+-- ===== SCAN TRÁI =====
+local function FindTargetFruits()
+	local result = {}
+	for _,v in pairs(Workspace:GetDescendants()) do
+		if IsRealFruit(v) and IsTargetFruit(v.Name) then
+			table.insert(result, v)
+		end
+	end
+	return result
+end
+
+-- ===== HOP SERVER THÔNG MINH =====
+local visited = {}
+
+local function HopServer()
+	local success, result = pcall(function()
+		return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+	end)
+
+	if success then
+		local data = game:GetService("HttpService"):JSONDecode(result)
+		for _,v in pairs(data.data or {}) do
+			if v.playing < v.maxPlayers and not visited[v.id] then
+				visited[v.id] = true
+				TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+				break
+			end
+		end
+	end
+end
+
+-- ===== MAIN LOOP =====
+while true do
+	local fruits = FindTargetFruits()
+
+	if #fruits > 0 then
+		for _,fruit in ipairs(fruits) do
+			if fruit and fruit.Parent then
+				print("⚡ Nhặt trái chuẩn:", fruit.Name)
+				
+				-- teleport chuẩn
+				hrp.CFrame = fruit.Handle.CFrame + Vector3.new(0,3,0)
+				
+				-- click detector
+				local cd = fruit:FindFirstChildOfClass("ClickDetector")
+				if cd then
+					fireclickdetector(cd)
+				end
+				
+				task.wait(1)
+			end
+		end
+	else
+		print("🔎 Không có trái target → hop server")
+		HopServer()
+	end
+	
+	task.wait(0.5)
+end
