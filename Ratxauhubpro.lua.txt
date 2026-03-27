@@ -1,0 +1,142 @@
+-- RÂTXÂU HUB PRO MAX 💀
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- ===== UI =====
+local gui = Instance.new("ScreenGui", plr.PlayerGui)
+
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0,10,0.5,0)
+icon.Text = "💀"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,280,0,320)
+frame.Position = UDim2.new(0.5,-140,0.5,-160)
+frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+frame.Visible = false
+
+icon.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+local function makeBtn(text, y)
+    local b = Instance.new("TextButton", frame)
+    b.Size = UDim2.new(1,0,0,40)
+    b.Position = UDim2.new(0,0,0,y)
+    b.Text = text
+    return b
+end
+
+-- ===== ESP =====
+local esp = false
+local espBtn = makeBtn("ESP Fruits: OFF", 10)
+
+local function addESP(v)
+    if v:FindFirstChild("ESP") then return end
+    local bill = Instance.new("BillboardGui", v)
+    bill.Name = "ESP"
+    bill.Size = UDim2.new(0,120,0,40)
+    bill.AlwaysOnTop = true
+
+    local t = Instance.new("TextLabel", bill)
+    t.Size = UDim2.new(1,0,1,0)
+    t.BackgroundTransparency = 1
+    t.Text = "🍈 "..v.Name
+    t.TextColor3 = Color3.fromRGB(255,255,0)
+end
+
+espBtn.MouseButton1Click:Connect(function()
+    esp = not esp
+    espBtn.Text = "ESP Fruits: "..(esp and "ON" or "OFF")
+end)
+
+-- ===== TELEPORT INSTANT =====
+local tpBtn = makeBtn("Teleport To Fruit", 60)
+
+tpBtn.MouseButton1Click:Connect(function()
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Tool") and v:FindFirstChild("Handle") then
+            plr.Character.HumanoidRootPart.CFrame = v.Handle.CFrame + Vector3.new(0,3,0)
+            break
+        end
+    end
+end)
+
+-- ===== AUTO FARM FRUIT =====
+local auto = false
+local autoBtn = makeBtn("Auto Fruit: OFF", 110)
+
+local function storeFruit()
+    for _, tool in pairs(plr.Backpack:GetChildren()) do
+        if tool:IsA("Tool") then
+            pcall(function()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StoreFruit", tool.Name)
+            end)
+        end
+    end
+end
+
+autoBtn.MouseButton1Click:Connect(function()
+    auto = not auto
+    autoBtn.Text = "Auto Fruit: "..(auto and "ON" or "OFF")
+end)
+
+-- ===== AUTO HOP =====
+local visited = {}
+local function hop()
+    local servers = {}
+    local success, res = pcall(function()
+        return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Desc&limit=100")
+    end)
+
+    if success then
+        local data = HttpService:JSONDecode(res)
+        for _, s in pairs(data.data) do
+            if s.playing > 5 and not visited[s.id] then
+                table.insert(servers, s.id)
+            end
+        end
+    end
+
+    if #servers > 0 then
+        local s = servers[math.random(1,#servers)]
+        visited[s] = true
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, s, plr)
+    end
+end
+
+-- ===== LOOP =====
+while true do
+    if esp then
+        for _,v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Tool") then
+                addESP(v)
+            end
+        end
+    end
+
+    if auto then
+        local found = false
+        for _,v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Tool") and v:FindFirstChild("Handle") then
+                plr.Character.HumanoidRootPart.CFrame = v.Handle.CFrame + Vector3.new(0,3,0)
+                wait(0.2)
+                storeFruit()
+                found = true
+                break
+            end
+        end
+
+        if not found then
+            hop()
+        end
+    end
+
+    wait(1)
+end
