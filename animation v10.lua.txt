@@ -1,0 +1,132 @@
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local cam = workspace.CurrentCamera
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+
+local DomainActive = true
+
+if DomainActive then
+    -- ===== Reset camera =====
+    cam.CameraType = Enum.CameraType.Scriptable
+    cam.CFrame = CFrame.new(hrp.Position + Vector3.new(0,5,15), hrp.Position)
+
+    -- ===== Hover + aura đỏ vàng =====
+    local hoverTween = TweenService:Create(hrp, TweenInfo.new(10, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+        CFrame = hrp.CFrame + Vector3.new(0,2,0)
+    })
+    hoverTween:Play()
+
+    local aura = Instance.new("ParticleEmitter", hrp)
+    aura.Rate = 100
+    aura.Lifetime = NumberRange.new(1,2)
+    aura.Speed = NumberRange.new(2,5)
+    aura.Size = NumberSequence.new(2.5)
+    aura.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255,215,0))})
+
+    local eyes = Instance.new("PointLight", hrp)
+    eyes.Color = Color3.fromRGB(255,0,0)
+    eyes.Range = 5
+    eyes.Brightness = 2
+
+    -- ===== Sever rung chuyển =====
+    task.spawn(function()
+        for i = 1,30 do
+            RunService.RenderStepped:Wait()
+            local shake = Vector3.new(math.random(-2,2)/2, math.random(-2,2)/2, math.random(-2,2)/2)
+            cam.CFrame = CFrame.new(hrp.Position + Vector3.new(0,10,20) + shake, hrp.Position)
+        end
+    end)
+    task.wait(1.5)
+
+    -- ===== Nhân vật bay lên + camera bay theo =====
+    local flyHeight = 50
+    TweenService:Create(hrp, TweenInfo.new(3, Enum.EasingStyle.Sine), {CFrame = hrp.CFrame + Vector3.new(0,flyHeight,0)}):Play()
+    task.spawn(function()
+        local startPos = cam.CFrame.Position
+        local targetPos = startPos + Vector3.new(0,flyHeight,0)
+        for i = 0,1,0.02 do
+            RunService.RenderStepped:Wait()
+            cam.CFrame = CFrame.new(startPos:Lerp(targetPos,i), hrp.Position + Vector3.new(0,5,0))
+        end
+    end)
+    task.wait(3)
+
+    -- ===== Triệu hồi rồng =====
+    for i = 1,8 do
+        local part = Instance.new("Part", workspace)
+        part.Size = Vector3.new(2,2,2)
+        part.Anchored = true
+        part.Material = Enum.Material.Neon
+        part.Color = Color3.fromRGB(255,165,0)
+        part.Position = hrp.Position + Vector3.new(math.random(-10,10),math.random(0,10),math.random(-10,10))
+
+        local pe = Instance.new("ParticleEmitter", part)
+        pe.Rate = 100
+        pe.Lifetime = NumberRange.new(1,2)
+        pe.Speed = NumberRange.new(5,10)
+        pe.Size = NumberSequence.new(1.5)
+        pe.Color = ColorSequence.new(Color3.fromRGB(255,140,0))
+    end
+
+    -- ===== Lỗ đen + nổ =====
+    local blackhole = Instance.new("Part", workspace)
+    blackhole.Size = Vector3.new(1,1,1)
+    blackhole.Position = hrp.Position
+    blackhole.Anchored = true
+    blackhole.Material = Enum.Material.Neon
+    blackhole.Color = Color3.fromRGB(0,0,0)
+    blackhole.Transparency = 0.5
+
+    local bhEmitter = Instance.new("ParticleEmitter", blackhole)
+    bhEmitter.Rate = 200
+    bhEmitter.Lifetime = NumberRange.new(1,2)
+    bhEmitter.Speed = NumberRange.new(5,10)
+    bhEmitter.Size = NumberSequence.new({NumberSequenceKeypoint.new(0,5), NumberSequenceKeypoint.new(1,0)})
+    bhEmitter.Color = ColorSequence.new(Color3.fromRGB(0,0,0))
+
+    task.wait(1.5)
+    for i=1,50 do
+        local part = Instance.new("Part", workspace)
+        part.Size = Vector3.new(2,2,2)
+        part.Position = hrp.Position
+        part.Anchored = false
+        part.Material = Enum.Material.Neon
+        part.Color = Color3.fromRGB(255,0,0)
+        part.Velocity = Vector3.new(math.random(-100,100), math.random(50,100), math.random(-100,100))
+        task.delay(3, function() part:Destroy() end)
+    end
+    blackhole:Destroy()
+
+    -- ===== Camera xoay vòng ngang 360° =====
+    task.spawn(function()
+        local t0 = tick()
+        for i=1,360 do
+            if not DomainActive then return end
+            RunService.RenderStepped:Wait()
+            local rad = math.rad(i)
+            local offset = Vector3.new(math.cos(rad)*30,15,math.sin(rad)*30)
+            cam.CFrame = CFrame.new(hrp.Position + offset, hrp.Position)
+        end
+    end)
+    task.wait(5)
+
+    -- ===== Camera dọc từ trên xuống =====
+    task.spawn(function()
+        local topOffset = Vector3.new(0,50,0)
+        local bottomOffset = Vector3.new(0,5,0)
+        for i=0,1,0.02 do
+            if not DomainActive then return end
+            RunService.RenderStepped:Wait()
+            local offset = topOffset:Lerp(bottomOffset,i)
+            cam.CFrame = CFrame.new(hrp.Position + offset, hrp.Position)
+        end
+    end)
+    task.wait(3)
+
+    -- ===== Tắt animation sau khi kết thúc =====
+    DomainActive = false
+    cam.CameraType = Enum.CameraType.Custom
+end
