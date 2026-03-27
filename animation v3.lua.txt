@@ -1,0 +1,87 @@
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local cam = workspace.CurrentCamera
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+
+-- ===== RESET CAMERA =====
+cam.CameraType = Enum.CameraType.Scriptable
+
+-- ===== 0s – 2s: Nhân vật đối diện, chuẩn bị kết ấn =====
+cam.CFrame = CFrame.new(hrp.Position + Vector3.new(0,5,5), hrp.Position)
+
+-- ===== 2s – 5s: Particle aura bay quanh + server flash đỏ =====
+local aura = Instance.new("ParticleEmitter", hrp)
+aura.Rate = 120
+aura.Lifetime = NumberRange.new(1,2)
+aura.Speed = NumberRange.new(2,5)
+aura.Size = NumberSequence.new(2)
+aura.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255,215,0))
+})
+
+task.spawn(function()
+	for i = 1,60 do
+		local t = i/60
+		Lighting.ColorShift_Top = Color3.fromRGB(255, t*255, t*0)
+		Lighting.ColorShift_Bottom = Color3.fromRGB(255, t*215, 0)
+		task.wait(0.05)
+	end
+end)
+task.wait(3)
+
+-- ===== 5s – 7s: Camera zoom từ 5m → cận mặt =====
+local startCam = hrp.Position + Vector3.new(0,5,5)
+local endCam = hrp.Position + Vector3.new(0,2,1)
+TweenService:Create(cam, TweenInfo.new(2), {CFrame = CFrame.new(endCam, hrp.Position)}):Play()
+task.wait(2)
+
+-- ===== 7s – 10s: Bay vòng quanh + aura xoay =====
+task.spawn(function()
+	for i = 1,120 do
+		task.wait(0.025)
+		local rad = math.rad(i*3)
+		local offset = Vector3.new(math.cos(rad)*3,1,math.sin(rad)*3)
+		hrp.CFrame = CFrame.new(hrp.Position + offset)
+	end
+end)
+
+-- ===== 10s – 12s: Teleport sang lãnh địa riêng 30m =====
+task.wait(2)
+local domainCenter = Vector3.new(1000,100,1000)
+hrp.CFrame = CFrame.new(domainCenter + Vector3.new(0,2,0))
+
+local domainFloor = Instance.new("Part", workspace)
+domainFloor.Size = Vector3.new(60,1,60)
+domainFloor.Anchored = true
+domainFloor.Material = Enum.Material.Neon
+domainFloor.Color = Color3.fromRGB(0,0,0)
+domainFloor.Position = domainCenter - Vector3.new(0,0.5,0)
+
+-- ===== 12s – 15s: Hover + mắt đỏ + camera giữ góc =====
+local eyes = Instance.new("PointLight", hrp)
+eyes.Color = Color3.fromRGB(255,0,0)
+eyes.Range = 5
+eyes.Brightness = 2
+
+cam.CFrame = CFrame.new(domainCenter + Vector3.new(0,5,10), domainCenter)
+
+TweenService:Create(hrp, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	CFrame = hrp.CFrame + Vector3.new(0,2,0)
+}):Play()
+
+-- Particle nổ nhẹ xung quanh
+task.spawn(function()
+	for i=1,30 do
+		local part = Instance.new("Part", workspace)
+		part.Size = Vector3.new(1,1,1)
+		part.Position = hrp.Position
+		part.Anchored = false
+		part.Material = Enum.Material.Neon
+		part.Color = Color3.fromRGB(255,0,0)
+		part.Velocity = Vector3.new(math.random(-50,50), math.random(40,80), math.random(-50,50))
+	end
+end)
