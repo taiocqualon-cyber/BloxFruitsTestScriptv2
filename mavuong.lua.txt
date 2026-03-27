@@ -1,0 +1,199 @@
+-- 👹 RÂTXÂU ULTIMATE HUB FINAL
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- ===== UI =====
+local gui = Instance.new("ScreenGui", plr.PlayerGui)
+
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0,10,0.5,0)
+icon.Text = "👹"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,300,0,320)
+frame.Position = UDim2.new(0.5,-150,0.5,-160)
+frame.BackgroundColor3 = Color3.fromRGB(10,0,0)
+frame.Visible = false
+frame.Active = true
+frame.Draggable = true
+
+icon.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+-- ===== NOTIFY =====
+local function notify(msg)
+    print("💀 "..msg)
+end
+
+-- ===== TOGGLE =====
+local function createToggle(name, y, callback)
+    local toggle = false
+
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(1,0,0,40)
+    btn.Position = UDim2.new(0,0,0,y)
+    btn.BackgroundColor3 = Color3.fromRGB(30,0,0)
+    btn.Text = name.." : OFF"
+    btn.TextColor3 = Color3.fromRGB(255,0,0)
+
+    btn.MouseButton1Click:Connect(function()
+        toggle = not toggle
+        btn.Text = name.." : "..(toggle and "ON" or "OFF")
+        btn.BackgroundColor3 = toggle and Color3.fromRGB(0,80,0) or Color3.fromRGB(30,0,0)
+        callback(toggle)
+    end)
+end
+
+-- ===== STATES =====
+local autoFruit = false
+local esp = false
+local autoChest = false
+
+-- ===== ESP =====
+local function addESP(v)
+    if v:FindFirstChild("ESP") then return end
+    local b = Instance.new("BillboardGui", v)
+    b.Name = "ESP"
+    b.Size = UDim2.new(0,120,0,40)
+    b.AlwaysOnTop = true
+
+    local t = Instance.new("TextLabel", b)
+    t.Size = UDim2.new(1,0,1,0)
+    t.BackgroundTransparency = 1
+    t.Text = "🍈 "..v.Name
+    t.TextColor3 = Color3.new(1,1,0)
+end
+
+-- ===== STORE =====
+local function store()
+    for _,t in pairs(plr.Backpack:GetChildren()) do
+        if t:IsA("Tool") then
+            pcall(function()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StoreFruit", t.Name)
+            end)
+        end
+    end
+end
+
+-- ===== FIND CHEST =====
+local function findChest()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Part") and string.find(v.Name:lower(),"chest") then
+            return v
+        end
+    end
+end
+
+-- ===== PLAYER NEAR =====
+local function playerNear()
+    for _,p in pairs(Players:GetPlayers()) do
+        if p ~= plr and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (plr.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if d < 40 then return true end
+        end
+    end
+end
+
+-- ===== SERVER HOP =====
+local visited = {}
+
+local function changeServer()
+    notify("Changing server...")
+
+    local servers = {}
+
+    local success, res = pcall(function()
+        return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Desc&limit=100")
+    end)
+
+    if success then
+        local data = HttpService:JSONDecode(res)
+        for _, s in pairs(data.data) do
+            if not visited[s.id] then
+                table.insert(servers, s.id)
+            end
+        end
+    end
+
+    if #servers > 0 then
+        local chosen = servers[math.random(1,#servers)]
+        visited[chosen] = true
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, chosen, plr)
+    end
+end
+
+-- ===== BUTTONS =====
+createToggle("Auto Fruit", 10, function(v) autoFruit = v end)
+createToggle("ESP Fruits", 60, function(v) esp = v end)
+createToggle("Auto Chest", 110, function(v) autoChest = v end)
+
+-- CHANGE SERVER BUTTON
+local hopBtn = Instance.new("TextButton", frame)
+hopBtn.Size = UDim2.new(1,0,0,40)
+hopBtn.Position = UDim2.new(0,0,0,170)
+hopBtn.Text = "🔁 Change Server"
+hopBtn.BackgroundColor3 = Color3.fromRGB(0,0,50)
+hopBtn.TextColor3 = Color3.fromRGB(0,170,255)
+
+hopBtn.MouseButton1Click:Connect(changeServer)
+
+-- TELEPORT BUTTON
+local tpBtn = Instance.new("TextButton", frame)
+tpBtn.Size = UDim2.new(1,0,0,40)
+tpBtn.Position = UDim2.new(0,0,0,220)
+tpBtn.Text = "🚀 Teleport Fruit"
+
+tpBtn.MouseButton1Click:Connect(function()
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Tool") and v:FindFirstChild("Handle") then
+            plr.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
+            break
+        end
+    end
+end)
+
+-- ===== LOOP =====
+while true do
+    -- ESP
+    if esp then
+        for _,v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Tool") then addESP(v) end
+        end
+    end
+
+    -- AUTO FRUIT
+    if autoFruit then
+        if playerNear() then
+            changeServer()
+        end
+
+        for _,v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Tool") and v:FindFirstChild("Handle") then
+                plr.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
+                wait(0.2)
+                store()
+                notify("Picked: "..v.Name)
+                break
+            end
+        end
+    end
+
+    -- AUTO CHEST
+    if autoChest then
+        local chest = findChest()
+        if chest then
+            plr.Character.HumanoidRootPart.CFrame = chest.CFrame
+            notify("💰 Chest collected")
+            wait(math.random(1,3))
+        end
+    end
+
+    wait(1)
+end
