@@ -1,0 +1,109 @@
+-- 💀 SIMPLE MYTHICAL FINDER FIX
+repeat task.wait() until game:IsLoaded()
+
+local player = game.Players.LocalPlayer
+local TeleportService = game:GetService("TeleportService")
+local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
+
+-- ===== GUI TEXT =====
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.ResetOnSpawn = false
+
+local label = Instance.new("TextLabel", gui)
+label.Size = UDim2.new(0,300,0,40)
+label.Position = UDim2.new(0.5,-150,0.05,0)
+label.BackgroundTransparency = 0.3
+label.BackgroundColor3 = Color3.fromRGB(0,0,0)
+label.TextColor3 = Color3.fromRGB(255,255,255)
+label.TextScaled = true
+label.Text = "🔎 Đang khởi động..."
+
+-- ===== TRÁI XỊN =====
+local Mythical = {
+	"kitsune","leopard","dragon","dough",
+	"spirit","venom","control","shadow"
+}
+
+local function isMythical(name)
+	name = string.lower(name)
+	for _,v in pairs(Mythical) do
+		if string.find(name,v) then
+			return true
+		end
+	end
+	return false
+end
+
+-- ===== TÌM TRÁI =====
+local function findFruit()
+	for _,v in pairs(Workspace:GetDescendants()) do
+		if v:IsA("Tool") and v:FindFirstChild("Handle") then
+			if string.find(string.lower(v.Name),"fruit") and isMythical(v.Name) then
+				return v
+			end
+		end
+	end
+end
+
+-- ===== SERVER LIST =====
+local visited = {}
+
+local function getServers()
+	local success, result = pcall(function()
+		return game:HttpGet(
+			"https://games.roblox.com/v1/games/"..
+			game.PlaceId..
+			"/servers/Public?limit=100"
+		)
+	end)
+
+	if success then
+		local data = HttpService:JSONDecode(result)
+		return data.data or {}
+	end
+	return {}
+end
+
+-- ===== HOP KHÔNG TRÙNG =====
+local function hopServer()
+	label.Text = "🚀 Đang đổi server..."
+
+	local servers = getServers()
+
+	for _,s in pairs(servers) do
+		if s.playing < s.maxPlayers and not visited[s.id] then
+			visited[s.id] = true
+
+			task.wait(4) -- ⚠️ DELTA SAFE
+
+			TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, player)
+			return
+		end
+	end
+
+	-- nếu hết server → reset
+	visited = {}
+	label.Text = "♻️ Reset server list..."
+	task.wait(2)
+end
+
+-- ===== MAIN =====
+while true do
+	label.Text = "🔎 Đang tìm trái..."
+
+	local fruit = findFruit()
+
+	if fruit then
+		label.Text = "💎 Có: "..fruit.Name
+
+		local hrp = player.Character.HumanoidRootPart
+		hrp.CFrame = fruit.Handle.CFrame + Vector3.new(0,3,0)
+
+		task.wait(2)
+	else
+		hopServer()
+	end
+
+	task.wait(1)
+end
