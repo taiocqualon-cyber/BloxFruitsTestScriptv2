@@ -1,0 +1,125 @@
+-- 💀 CLEAN HUB FRUIT SYSTEM
+repeat task.wait() until game:IsLoaded()
+
+local player = game.Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local TeleportService = game:GetService("TeleportService")
+local TweenService = game:GetService("TweenService")
+
+-- ===== SETTINGS =====
+local Settings = {
+	ESP = false,
+	TeleportFruit = false,
+	HopFruit = false,
+	Tween = false,
+	HopMoon = false
+}
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.ResetOnSpawn = false
+
+-- ICON HUB (ĐẸP)
+local icon = Instance.new("ImageButton", gui)
+icon.Size = UDim2.new(0,45,0,45)
+icon.Position = UDim2.new(0.02,0,0.15,0)
+icon.BackgroundColor3 = Color3.fromRGB(255,215,0)
+icon.Image = "rbxassetid://15059956542"
+
+local corner = Instance.new("UICorner", icon)
+corner.CornerRadius = UDim.new(1,0)
+
+-- FRAME
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,260,0,260)
+frame.Position = UDim2.new(0,-300,0.15,0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+
+local open = false
+icon.MouseButton1Click:Connect(function()
+	open = not open
+	TweenService:Create(frame, TweenInfo.new(0.4), {
+		Position = open and UDim2.new(0.02,0,0.15,0) or UDim2.new(0,-300,0.15,0)
+	}):Play()
+end)
+
+-- ===== TOGGLE FUNCTION =====
+local function createToggle(name, posY, callback)
+	local btn = Instance.new("TextButton", frame)
+	btn.Size = UDim2.new(1,0,0,40)
+	btn.Position = UDim2.new(0,0,posY,0)
+	btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	btn.TextColor3 = Color3.fromRGB(255,255,255)
+	btn.Text = name.." : OFF"
+
+	local state = false
+
+	btn.MouseButton1Click:Connect(function()
+		state = not state
+		btn.Text = name.." : "..(state and "ON" or "OFF")
+		callback(state)
+	end)
+end
+
+-- ===== TOGGLES =====
+createToggle("ESP Fruits",0,function(v) Settings.ESP = v end)
+createToggle("Teleport Fruits",45,function(v) Settings.TeleportFruit = v end)
+createToggle("Hop Server Fruits",90,function(v) Settings.HopFruit = v end)
+createToggle("Auto Tween",135,function(v) Settings.Tween = v end)
+createToggle("Hop Full Moon",180,function(v) Settings.HopMoon = v end)
+
+-- ===== FUNCTIONS =====
+local function getFruit()
+	for _,v in pairs(Workspace:GetDescendants()) do
+		if v:IsA("Tool") and v:FindFirstChild("Handle") then
+			if string.find(string.lower(v.Name),"fruit") then
+				return v
+			end
+		end
+	end
+end
+
+local function ESP(obj)
+	if obj:FindFirstChild("ESP") then return end
+	local bill = Instance.new("BillboardGui", obj)
+	bill.Size = UDim2.new(0,100,0,40)
+	bill.AlwaysOnTop = true
+
+	local txt = Instance.new("TextLabel", bill)
+	txt.Size = UDim2.new(1,0,1,0)
+	txt.BackgroundTransparency = 1
+	txt.TextColor3 = Color3.fromRGB(255,0,0)
+	txt.Text = obj.Name
+end
+
+local function tweenTo(pos)
+	local hrp = player.Character.HumanoidRootPart
+	local tween = TweenService:Create(hrp, TweenInfo.new(1), {CFrame = pos})
+	tween:Play()
+end
+
+-- ===== MAIN LOOP =====
+while true do
+	local fruit = getFruit()
+
+	if fruit then
+		if Settings.ESP then
+			ESP(fruit.Handle)
+		end
+
+		if Settings.TeleportFruit then
+			player.Character.HumanoidRootPart.CFrame = fruit.Handle.CFrame + Vector3.new(0,3,0)
+		end
+
+		if Settings.Tween then
+			tweenTo(fruit.Handle.CFrame)
+		end
+	else
+		if Settings.HopFruit or Settings.HopMoon then
+			task.wait(4) -- DELTA SAFE
+			TeleportService:Teleport(game.PlaceId)
+		end
+	end
+
+	task.wait(1)
+end
