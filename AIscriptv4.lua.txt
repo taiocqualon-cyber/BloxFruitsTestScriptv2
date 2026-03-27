@@ -1,0 +1,161 @@
+-- 👹🦊 KITSUNE HUNTER
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+-- ===== TARGET =====
+local TARGET = "Kitsune"
+
+-- ===== GUI ICON =====
+local gui = Instance.new("ScreenGui", plr.PlayerGui)
+
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,40,0,40)
+icon.Position = UDim2.new(0,10,0.5,0)
+icon.Text = "🦊"
+icon.BackgroundColor3 = Color3.fromRGB(0,0,0)
+icon.TextColor3 = Color3.fromRGB(255,120,0)
+
+Instance.new("UICorner",icon).CornerRadius=UDim.new(1,0)
+
+-- ===== MENU =====
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,240,0,180)
+frame.Position = UDim2.new(0.5,-120,0.5,-90)
+frame.BackgroundColor3 = Color3.fromRGB(15,10,0)
+frame.Visible = false
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner",frame).CornerRadius=UDim.new(0,10)
+
+icon.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+-- ===== TOGGLE =====
+local hunt = false
+
+local btn = Instance.new("TextButton", frame)
+btn.Size = UDim2.new(0.9,0,0,30)
+btn.Position = UDim2.new(0.05,0,0,10)
+btn.Text = "🦊 Hunt Kitsune : OFF"
+btn.TextScaled = true
+btn.BackgroundColor3 = Color3.fromRGB(50,20,0)
+
+Instance.new("UICorner",btn).CornerRadius=UDim.new(0,6)
+
+btn.MouseButton1Click:Connect(function()
+    hunt = not hunt
+    btn.Text = "🦊 Hunt Kitsune : "..(hunt and "ON" or "OFF")
+end)
+
+-- ===== SERVER BUTTON =====
+local hop = Instance.new("TextButton", frame)
+hop.Size = UDim2.new(0.9,0,0,30)
+hop.Position = UDim2.new(0.05,0,0,50)
+hop.Text = "🔁 Change Server"
+hop.TextScaled = true
+hop.BackgroundColor3 = Color3.fromRGB(0,0,120)
+
+Instance.new("UICorner",hop).CornerRadius=UDim.new(0,6)
+
+hop.MouseButton1Click:Connect(function()
+    local servers = {}
+    local ok,res = pcall(function()
+        return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+    end)
+
+    if ok then
+        local data = HttpService:JSONDecode(res)
+        for _,s in pairs(data.data) do
+            if s.playing < s.maxPlayers-2 then
+                table.insert(servers,s.id)
+            end
+        end
+    end
+
+    if #servers>0 then
+        TeleportService:TeleportToPlaceInstance(game.PlaceId,servers[math.random(1,#servers)],plr)
+    end
+end)
+
+-- ===== CHECK KITSUNE =====
+local function isKitsune(v)
+    return v:IsA("Tool") and v:FindFirstChild("Handle") and string.find(v.Name, TARGET)
+end
+
+-- ===== ESP =====
+local function addESP(v)
+    if v:FindFirstChild("ESP") then return end
+
+    local b = Instance.new("BillboardGui", v)
+    b.Name = "ESP"
+    b.Size = UDim2.new(0,180,0,40)
+    b.AlwaysOnTop = true
+
+    local t = Instance.new("TextLabel", b)
+    t.Size = UDim2.new(1,0,1,0)
+    t.BackgroundTransparency = 1
+    t.TextColor3 = Color3.fromRGB(255,100,0)
+
+    RunService.Heartbeat:Connect(function()
+        if v and v.Parent and plr.Character then
+            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+            local h = v:FindFirstChild("Handle")
+
+            if hrp and h then
+                local d = (hrp.Position - h.Position).Magnitude
+                t.Text = "🦊 KITSUNE ["..math.floor(d).."m]"
+            end
+        end
+    end)
+end
+
+-- ===== STORE =====
+local function store()
+    for _,t in pairs(plr.Backpack:GetChildren()) do
+        if t:IsA("Tool") then
+            pcall(function()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StoreFruit",t.Name)
+            end)
+        end
+    end
+end
+
+-- ===== LOOP =====
+while true do
+    if hunt then
+        local found = false
+
+        for _,v in pairs(workspace:GetDescendants()) do
+            if isKitsune(v) then
+                found = true
+
+                addESP(v)
+
+                -- 🔊 ALERT
+                warn("🦊 KITSUNE FOUND !!!")
+
+                -- 🚀 TP
+                plr.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
+
+                wait(0.2)
+                store()
+                break
+            end
+        end
+
+        -- ❌ không có → đổi server
+        if not found then
+            warn("❌ No Kitsune → Changing server")
+            hop.MouseButton1Click:Fire()
+        end
+    end
+
+    wait(1)
+end
