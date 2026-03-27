@@ -1,0 +1,57 @@
+-- 💀 SIMPLE MYTHICAL FRUIT FINDER
+repeat task.wait() until game:IsLoaded()
+
+local player = game.Players.LocalPlayer
+local TeleportService = game:GetService("TeleportService")
+local Workspace = game:GetService("Workspace")
+
+-- ===== DANH SÁCH TRÁI XỊN =====
+local Mythical = {
+	"kitsune","leopard","dragon","dough",
+	"spirit","venom","control","shadow"
+}
+
+-- ===== CHECK =====
+local function isMythical(name)
+	name = string.lower(name)
+	for _,v in pairs(Mythical) do
+		if string.find(name,v) then
+			return true
+		end
+	end
+	return false
+end
+
+-- ===== TÌM TRÁI =====
+local function findFruit()
+	for _,v in pairs(Workspace:GetDescendants()) do
+		if v:IsA("Tool") and v:FindFirstChild("Handle") then
+			if string.find(string.lower(v.Name),"fruit") and isMythical(v.Name) then
+				return v
+			end
+		end
+	end
+end
+
+-- ===== LOOP =====
+while true do
+	print("🔎 Đang tìm trái...")
+
+	local fruit = findFruit()
+
+	if fruit then
+		print("💎 Tìm thấy:", fruit.Name)
+
+		local hrp = player.Character.HumanoidRootPart
+		hrp.CFrame = fruit.Handle.CFrame + Vector3.new(0,3,0)
+
+		task.wait(2)
+	else
+		print("🚀 Không có → đổi server")
+
+		task.wait(4) -- ⚠️ delay cho Delta
+		TeleportService:Teleport(game.PlaceId)
+	end
+
+	task.wait(1)
+end
