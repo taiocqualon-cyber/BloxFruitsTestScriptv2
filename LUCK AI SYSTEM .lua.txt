@@ -1,0 +1,65 @@
+-- ===== LUCK AI SYSTEM =====
+local serverScore = 0
+local scanCount = 0
+
+local function updateLuck(foundGod, foundNormal)
+	if foundGod then
+		serverScore = serverScore + 2
+	elseif foundNormal then
+		serverScore = serverScore + 1
+	else
+		serverScore = serverScore - 1
+	end
+
+	scanCount = scanCount + 1
+
+	status.Text = "📊 Luck Score: "..serverScore.." | Scan: "..scanCount
+end
+
+local function shouldHop()
+	-- sau 5 lần scan mới quyết định
+	if scanCount >= 5 then
+		if serverScore <= -2 then
+			return true
+		end
+	end
+	return false
+endtask.spawn(function()
+	while true do
+		local foundGod = false
+		local foundNormal = false
+
+		task.wait(2)
+
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("Tool") and v:FindFirstChild("Handle") then
+				
+				if isGod(v.Name) then
+					foundGod = true
+
+					status.Text = "🔥 GOD: "..v.Name
+
+					ESP(v)
+					tweenTo(v.Handle.Position + Vector3.new(0,2,0))
+					task.wait(1)
+					hold(v)
+
+				else
+					foundNormal = true
+				end
+			end
+		end
+
+		-- cập nhật AI
+		updateLuck(foundGod, foundNormal)
+
+		-- quyết định hop
+		if shouldHop() then
+			status.Text = "💀 Server xui → đổi server"
+			hop()
+			break
+		else
+			status.Text = "😈 Server ổn → tiếp tục farm"
+		end
+	end
+end)
