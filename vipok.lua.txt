@@ -1,0 +1,137 @@
+-- 🌕 GOD GUI + HIGH CHANCE FULL MOON + CINEMATIC INTRO
+local player = game.Players.LocalPlayer
+local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+-- ===== INTRO CINEMATIC 5s =====
+do
+	local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+	ScreenGui.ResetOnSpawn = false
+
+	local introFrame = Instance.new("Frame", ScreenGui)
+	introFrame.Size = UDim2.new(1,0,1,0)
+	introFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	introFrame.BackgroundTransparency = 0
+
+	local introText = Instance.new("TextLabel", introFrame)
+	introText.Size = UDim2.new(1,0,1,0)
+	introText.Text = "FULL MOON HUNTER"
+	introText.TextColor3 = Color3.fromRGB(255,215,0)
+	introText.TextScaled = true
+	introText.Font = Enum.Font.GothamBold
+	introText.BackgroundTransparency = 1
+
+	local particle = Instance.new("ParticleEmitter", introFrame)
+	particle.Rate = 50
+	particle.Speed = NumberRange.new(10,20)
+	particle.Lifetime = NumberRange.new(1,2)
+	particle.Size = NumberSequence.new(2)
+	particle.Color = ColorSequence.new(Color3.fromRGB(255,215,0))
+
+	task.wait(5) -- hiển thị intro 5 giây
+	ScreenGui:Destroy()
+end
+
+-- ===== GUI ICON + MENU =====
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+
+local icon = Instance.new("ImageButton", ScreenGui)
+icon.Size = UDim2.new(0,45,0,45)
+icon.Position = UDim2.new(0.02,0,0.1,0)
+icon.BackgroundColor3 = Color3.fromRGB(255,215,0)
+icon.Image = "rbxassetid://15059956542"
+
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0,280,0,180)
+frame.Position = UDim2.new(0,-350,0.1,0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "GOD MOON AI 😈"
+title.TextColor3 = Color3.fromRGB(255,215,0)
+title.BackgroundTransparency = 1
+title.TextScaled = true
+
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,0,0,80)
+status.Position = UDim2.new(0,0,0.3,0)
+status.TextColor3 = Color3.fromRGB(255,255,255)
+status.BackgroundTransparency = 1
+status.TextWrapped = true
+
+local btn = Instance.new("TextButton", frame)
+btn.Size = UDim2.new(0.6,0,0,35)
+btn.Position = UDim2.new(0.2,0,0.75,0)
+btn.Text = "🔥 FIND 🌖🌕"
+btn.BackgroundColor3 = Color3.fromRGB(255,215,0)
+btn.TextColor3 = Color3.fromRGB(0,0,0)
+
+-- Menu trượt
+local open = false
+icon.MouseButton1Click:Connect(function()
+	open = not open
+	TweenService:Create(frame, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
+		Position = open and UDim2.new(0.02,0,0.1,0) or UDim2.new(0,-350,0.1,0)
+	}):Play()
+end)
+
+-- ===== MOON CHECK =====
+local function GetMoon()
+	local t = Lighting.ClockTime
+	if t >= 0 and t <= 2 then
+		return 4, "🌕 FULL MOON"
+	elseif t <= 5 then
+		return 3, "🌖 GẦN FULL"
+	else
+		return 1, "🌘 / 🌗 CÒN XA"
+	end
+end
+
+local function TimeToFull()
+	local t = Lighting.ClockTime
+	local remain = (24 - t) % 24
+	return math.floor(remain*60).."s"
+end
+
+-- Update UI realtime
+task.spawn(function()
+	while true do
+		local lvl, txt = GetMoon()
+		status.Text = "Moon: "..txt.."\nNext: "..TimeToFull()
+		task.wait(1)
+	end
+end)
+
+-- ===== AI HIGH CHANCE 🌖🌕 =====
+local visited = {}
+btn.MouseButton1Click:Connect(function()
+	status.Text = "🔎 GOD AI đang scan server..."
+	task.spawn(function()
+		for attempt=1,50 do
+			if attempt>1 then task.wait(0.3) end
+			local lvl, txt = GetMoon()
+			if lvl >= 3 then
+				status.Text = "✅ Server tốt: "..txt
+				return
+			end
+
+			status.Text = "🔄 Hop server "..attempt.."..."
+			local req = game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=50")
+			local data = HttpService:JSONDecode(req)
+
+			for _,v in pairs(data.data) do
+				if v.playing < v.maxPlayers and not visited[v.id] then
+					visited[v.id] = true
+					TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+					break
+				end
+			end
+		end
+		status.Text = "❌ Không tìm thấy server tốt!"
+	end)
+end)
