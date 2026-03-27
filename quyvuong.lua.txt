@@ -1,0 +1,117 @@
+-- 💀 GOD FRUIT HUNTER – FIX HOP 100%
+repeat task.wait() until game:IsLoaded()
+
+local player = game.Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+-- ===== TARGET =====
+local TargetFruits = {
+	"kitsune","yeti","dough","t-rex","control",
+	"tiger","mammoth","spirit","venom","gas",
+	"gravity","portal","blizzard","pain"
+}
+
+-- ===== GET HRP =====
+local function getHRP()
+	local char = player.Character or player.CharacterAdded:Wait()
+	return char:WaitForChild("HumanoidRootPart")
+end
+
+-- ===== CHECK =====
+local function isTarget(name)
+	name = string.lower(name)
+	for _,f in pairs(TargetFruits) do
+		if string.find(name,f) then
+			return true
+		end
+	end
+	return false
+end
+
+local function findFruit()
+	for _,v in pairs(Workspace:GetDescendants()) do
+		if v:IsA("Tool") and v:FindFirstChild("Handle") then
+			if string.find(string.lower(v.Name),"fruit") and isTarget(v.Name) then
+				return v
+			end
+		end
+	end
+end
+
+-- ===== SERVER SYSTEM =====
+local visited = {}
+
+local function getServers()
+	local success, result = pcall(function()
+		return game:HttpGet(
+			"https://games.roblox.com/v1/games/"..
+			game.PlaceId..
+			"/servers/Public?limit=100"
+		)
+	end)
+
+	if success then
+		local data = HttpService:JSONDecode(result)
+		return data.data or {}
+	end
+	return nil
+end
+
+-- ===== HOP ANTI FAIL =====
+local function safeHop()
+	local servers = getServers()
+
+	if not servers or #servers == 0 then
+		warn("❌ API lỗi → thử lại...")
+		task.wait(2)
+		return
+	end
+
+	for _,s in pairs(servers) do
+		if s.playing < s.maxPlayers and not visited[s.id] then
+			visited[s.id] = true
+
+			print("🚀 Hop:", s.id)
+
+			local success, err = pcall(function()
+				TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, player)
+			end)
+
+			if success then
+				task.wait(3) -- đợi load
+				return
+			else
+				warn("❌ Teleport lỗi:", err)
+				task.wait(1)
+			end
+		end
+	end
+
+	-- hết server → reset
+	print("♻️ Reset server list")
+	visited = {}
+	task.wait(1)
+end
+
+-- ===== MAIN =====
+while true do
+	local fruit = findFruit()
+
+	if fruit then
+		print("💎 Nhặt:", fruit.Name)
+
+		local hrp = getHRP()
+		hrp.CFrame = fruit.Handle.CFrame + Vector3.new(0,3,0)
+
+		local cd = fruit:FindFirstChildOfClass("ClickDetector")
+		if cd then fireclickdetector(cd) end
+
+		task.wait(1)
+	else
+		safeHop()
+	end
+
+	task.wait(1)
+end
