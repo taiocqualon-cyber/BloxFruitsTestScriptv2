@@ -1,0 +1,163 @@
+repeat wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+
+-- ===== STATE =====
+local ESP = false
+local TPFRUIT = false
+local HOPFRUIT = false
+local TWEENCHEST = false
+local FULLMOON = false
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui", plr.PlayerGui)
+
+-- ICON
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,45,0,45)
+icon.Position = UDim2.new(0,10,0.5,0)
+icon.Text = "👹"
+icon.BackgroundColor3 = Color3.fromRGB(20,20,20)
+
+Instance.new("UICorner",icon).CornerRadius = UDim.new(1,0)
+
+-- MENU
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,240,0,260)
+frame.Position = UDim2.new(0.5,-120,0.5,-130)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Visible = false
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner",frame)
+
+icon.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+-- ===== CREATE BUTTON =====
+local function createBtn(text,y)
+    local b = Instance.new("TextButton", frame)
+    b.Size = UDim2.new(0.9,0,0,35)
+    b.Position = UDim2.new(0.05,0,0,y)
+    b.Text = text.." : OFF"
+    return b
+end
+
+local espBtn = createBtn("ESP Fruits",10)
+local tpBtn = createBtn("Teleport Fruits",50)
+local hopBtn = createBtn("Auto Hop Fruit",90)
+local chestBtn = createBtn("Tween Chest",130)
+local moonBtn = createBtn("Full Moon Hop",170)
+
+-- ===== BUTTON LOGIC =====
+espBtn.MouseButton1Click:Connect(function()
+    ESP = not ESP
+    espBtn.Text = "ESP Fruits : "..(ESP and "ON" or "OFF")
+end)
+
+tpBtn.MouseButton1Click:Connect(function()
+    TPFRUIT = not TPFRUIT
+    tpBtn.Text = "Teleport Fruits : "..(TPFRUIT and "ON" or "OFF")
+end)
+
+hopBtn.MouseButton1Click:Connect(function()
+    HOPFRUIT = not HOPFRUIT
+    hopBtn.Text = "Auto Hop Fruit : "..(HOPFRUIT and "ON" or "OFF")
+end)
+
+chestBtn.MouseButton1Click:Connect(function()
+    TWEENCHEST = not TWEENCHEST
+    chestBtn.Text = "Tween Chest : "..(TWEENCHEST and "ON" or "OFF")
+end)
+
+moonBtn.MouseButton1Click:Connect(function()
+    FULLMOON = not FULLMOON
+    moonBtn.Text = "Full Moon Hop : "..(FULLMOON and "ON" or "OFF")
+end)
+
+-- ===== FUNCTION =====
+local function getFruit()
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Tool") and v:FindFirstChild("Handle") then
+            return v
+        end
+    end
+end
+
+local function hop()
+    local ok,res = pcall(function()
+        return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+    end)
+
+    if not ok then return end
+
+    local data = HttpService:JSONDecode(res)
+    if not data or not data.data then return end
+
+    local list = data.data
+    if #list == 0 then return end
+
+    local s = list[math.random(1,#list)]
+
+    TeleportService:TeleportToPlaceInstance(
+        game.PlaceId,
+        s.id,
+        plr
+    )
+end
+
+-- ===== MAIN LOOP =====
+while true do
+    wait(3)
+
+    local fruit = getFruit()
+
+    -- ESP
+    if ESP and fruit and not fruit:FindFirstChild("ESP") then
+        local b = Instance.new("BillboardGui", fruit)
+        b.Name = "ESP"
+        b.Size = UDim2.new(0,120,0,40)
+        b.AlwaysOnTop = true
+
+        local t = Instance.new("TextLabel", b)
+        t.Size = UDim2.new(1,0,1,0)
+        t.BackgroundTransparency = 1
+        t.TextColor3 = Color3.fromRGB(0,255,0)
+        t.TextScaled = true
+
+        RunService.RenderStepped:Connect(function()
+            if fruit and fruit.Parent then
+                local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local dist = (hrp.Position - fruit.Handle.Position).Magnitude
+                    t.Text = fruit.Name.." ["..math.floor(dist).."]"
+                end
+            end
+        end)
+    end
+
+    -- TP
+    if TPFRUIT and fruit then
+        local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = fruit.Handle.CFrame + Vector3.new(0,3,0)
+        end
+    end
+
+    -- AUTO HOP
+    if HOPFRUIT and not fruit then
+        hop()
+    end
+
+    -- FULL MOON (fake check an toàn)
+    if FULLMOON then
+        if not game.Lighting:FindFirstChild("FullMoon") then
+            hop()
+        end
+    end
+end
