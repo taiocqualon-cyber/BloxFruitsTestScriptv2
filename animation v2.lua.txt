@@ -1,0 +1,80 @@
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local cam = workspace.CurrentCamera
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- ===== RESET CAMERA =====
+cam.CameraType = Enum.CameraType.Scriptable
+
+-- ===== 1️⃣ KẾT ẤN / SFX =====
+-- tạo particle nhỏ vàng đỏ quanh tay để giả hiệu ứng kết ấn
+local aura = Instance.new("ParticleEmitter", hrp)
+aura.Rate = 100
+aura.Lifetime = NumberRange.new(0.5,1)
+aura.Speed = NumberRange.new(0,2)
+aura.Size = NumberSequence.new(1)
+aura.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255,215,0)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,0))
+})
+
+-- Giả lập câu nói Sukuna
+local voice = Instance.new("Sound", hrp)
+voice.SoundId = "rbxassetid://0000000000" -- thay bằng audio của Sukuna nếu có
+voice.Volume = 2
+voice:Play()
+
+task.wait(1.5)
+
+-- ===== 2️⃣ CAMERA ZOOM GẦN =====
+local startCam = hrp.Position + Vector3.new(0,5,15)
+cam.CFrame = CFrame.new(startCam, hrp.Position)
+local zoomTween = TweenService:Create(cam, TweenInfo.new(2, Enum.EasingStyle.Quad), {
+	CFrame = CFrame.new(hrp.Position + Vector3.new(0,3,7), hrp.Position)
+})
+zoomTween:Play()
+task.wait(2)
+
+-- ===== 3️⃣ HÚT VÀO DOMAIN =====
+-- tạo invisible "point" làm tâm hút
+local domainCenter = hrp.Position + Vector3.new(0,0,-5)
+for i=1,40 do
+	task.wait(0.03)
+	local lerpPos = hrp.Position:Lerp(domainCenter, i/40)
+	hrp.CFrame = CFrame.new(lerpPos)
+	cam.CFrame = CFrame.new(lerpPos + Vector3.new(0,5,10), lerpPos)
+end
+
+-- ===== 4️⃣ DOMAIN HIỆN RA KIẾN TRÚC =====
+local domainGate = Instance.new("Part", workspace)
+domainGate.Size = Vector3.new(20,10,2)
+domainGate.Anchored = true
+domainGate.Material = Enum.Material.Neon
+domainGate.Color = Color3.fromRGB(255,0,0)
+domainGate.Position = hrp.Position + Vector3.new(0,0,-5)
+
+-- phản chiếu dưới chân
+local floor = Instance.new("Part", workspace)
+floor.Size = Vector3.new(50,1,50)
+floor.Anchored = true
+floor.Material = Enum.Material.Neon
+floor.Color = Color3.fromRGB(0,170,255)
+floor.Position = hrp.Position - Vector3.new(0,3,0)
+
+-- ===== 5️⃣ CAMERA XOAY CHẬM QUANH =====
+task.spawn(function()
+	for i=1,120 do
+		task.wait(0.025)
+		local rad = math.rad(i*3)
+		local offset = Vector3.new(math.cos(rad)*15,5,math.sin(rad)*15)
+		cam.CFrame = CFrame.new(hrp.Position + offset, hrp.Position)
+	end
+end)
+
+-- ===== 6️⃣ HOVER NHẸ NGỒI NGẦU =====
+TweenService:Create(hrp, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+	CFrame = hrp.CFrame + Vector3.new(0,0.5,0)
+}):Play()
