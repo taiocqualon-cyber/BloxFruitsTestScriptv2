@@ -1,0 +1,190 @@
+repeat task.wait() until game:IsLoaded()
+
+-- ===== SERVICES =====
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+repeat task.wait() until player and player:FindFirstChild("PlayerGui")
+
+-- ===== CLEAR OLD UI =====
+pcall(function()
+	player.PlayerGui:FindFirstChild("GOD_AI_UI"):Destroy()
+end)
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui")
+gui.Name = "GOD_AI_UI"
+gui.Parent = player.PlayerGui
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+
+-- ===== ICON =====
+local icon = Instance.new("TextButton")
+icon.Parent = gui
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0,20,0.3,0)
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+icon.Text = "🍏"
+icon.TextScaled = true
+icon.TextColor3 = Color3.new(1,1,1)
+
+-- ===== MENU =====
+local frame = Instance.new("Frame")
+frame.Parent = gui
+frame.Size = UDim2.new(0,260,0,170)
+frame.Position = UDim2.new(0,80,0.3,0)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.2
+frame.Visible = false
+
+icon.MouseButton1Click:Connect(function()
+	frame.Visible = not frame.Visible
+end)
+
+-- ===== TEXT =====
+local info = Instance.new("TextLabel")
+info.Parent = frame
+info.Size = UDim2.new(1,0,0.35,0)
+info.BackgroundTransparency = 1
+info.Text = "🔥 GOD AI READY"
+info.TextScaled = true
+info.TextColor3 = Color3.new(1,1,1)
+
+local timer = Instance.new("TextLabel")
+timer.Parent = frame
+timer.Size = UDim2.new(1,0,0.25,0)
+timer.Position = UDim2.new(0,0,0.35,0)
+timer.BackgroundTransparency = 1
+timer.Text = "⏱️ 0s"
+timer.TextScaled = true
+timer.TextColor3 = Color3.fromRGB(0,255,0)
+
+-- ===== HOP BUTTON =====
+local hopBtn = Instance.new("TextButton")
+hopBtn.Parent = frame
+hopBtn.Size = UDim2.new(1,-20,0,40)
+hopBtn.Position = UDim2.new(0,10,0.65,0)
+hopBtn.BackgroundColor3 = Color3.fromRGB(120,0,0)
+hopBtn.Text = "💀 HOP SERVER"
+hopBtn.TextScaled = true
+hopBtn.TextColor3 = Color3.new(1,1,1)
+
+-- ===== TIMER =====
+local waitTime = 0
+local isSpamming = false
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		waitTime += 1
+
+		timer.Text = "⏱️ "..waitTime.."s"
+
+		if isSpamming then
+			info.Text = "🔥 ĐANG SPAM FRUIT"
+		else
+			info.Text = "⏳ Đợi trái..."
+		end
+	end
+end)
+
+-- ===== GOD FRUIT LIST =====
+local GOD = {
+	Leopard=true,Dragon=true,Kitsune=true,
+	Dough=true,Venom=true,Spirit=true
+}
+
+local function isGod(name)
+	for k,_ in pairs(GOD) do
+		if string.find(string.lower(name),string.lower(k)) then
+			return true
+		end
+	end
+	return false
+end
+
+-- ===== ESP =====
+local function ESP(obj)
+	if obj:FindFirstChild("ESP") then return end
+
+	local bill = Instance.new("BillboardGui", obj)
+	bill.Size = UDim2.new(0,100,0,40)
+	bill.AlwaysOnTop = true
+
+	local txt = Instance.new("TextLabel", bill)
+	txt.Size = UDim2.new(1,0,1,0)
+	txt.BackgroundTransparency = 1
+	txt.TextColor3 = Color3.fromRGB(255,0,0)
+	txt.TextScaled = true
+	txt.Text = "🔥 "..obj.Name
+end
+
+-- ===== TELEPORT =====
+local function tp(pos)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if root then
+		root.CFrame = CFrame.new(pos)
+	end
+end
+
+-- ===== HOLD =====
+local function hold(tool)
+	local char = player.Character
+	if not char then return end
+	tool.Parent = char
+	task.wait(0.3)
+	tool.Parent = player.Backpack
+	task.wait(0.3)
+	tool.Parent = char
+end
+
+-- ===== SMART HOP =====
+hopBtn.MouseButton1Click:Connect(function()
+	info.Text = "🔁 Đang tìm server..."
+
+	local success, data = pcall(function()
+		return HttpService:JSONDecode(
+			game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+		)
+	end)
+
+	if success and data then
+		for _,v in pairs(data.data) do
+			if v.playing >= 8 and v.playing < v.maxPlayers then
+				info.Text = "🚀 "..v.playing.." người"
+				TeleportService:TeleportToPlaceInstance(game.PlaceId,v.id,player)
+				break
+			end
+		end
+	else
+		info.Text = "❌ Lỗi server"
+	end
+end)
+
+-- ===== MAIN FARM =====
+task.spawn(function()
+	while true do
+		task.wait(2)
+
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("Tool") and v:FindFirstChild("Handle") then
+				
+				if isGod(v.Name) then
+					isSpamming = true
+					waitTime = 0
+
+					info.Text = "🔥 "..v.Name
+
+					ESP(v)
+					tp(v.Handle.Position + Vector3.new(0,2,0))
+					task.wait(1)
+					hold(v)
+
+					isSpamming = false
+				end
+			end
+		end
+	end
+end)
