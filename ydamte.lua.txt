@@ -1,0 +1,88 @@
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+
+-- ===== GUI =====
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+local icon = Instance.new("ImageButton", ScreenGui)
+icon.Size = UDim2.new(0,45,0,45)
+icon.Position = UDim2.new(0.02,0,0.1,0)
+icon.Image = "rbxassetid://15059956542"
+icon.BackgroundColor3 = Color3.fromRGB(255,215,0)
+
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0,280,0,180)
+frame.Position = UDim2.new(0,-350,0.1,0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,0,1,0)
+status.TextColor3 = Color3.fromRGB(255,255,255)
+status.BackgroundTransparency = 1
+status.TextWrapped = true
+status.Text = "Ready..."
+
+-- menu trượt
+local open = false
+icon.MouseButton1Click:Connect(function()
+	open = not open
+	TweenService:Create(frame, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
+		Position = open and UDim2.new(0.02,0,0.1,0) or UDim2.new(0,-350,0.1,0)
+	}):Play()
+end)
+
+-- ===== ACTIVE AI =====
+local Active = true
+local visited = {}
+
+task.spawn(function()
+	while Active do
+		status.Text = "🔎 Scan server..."
+		-- Lấy danh sách server
+		local success, result = pcall(function()
+			return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+		end)
+		if success then
+			local data = HttpService:JSONDecode(result)
+			for _,v in pairs(data.data or {}) do
+				if v.playing < v.maxPlayers and not visited[v.id] then
+					visited[v.id] = true
+					status.Text = "⏩ Hop server: "..v.id
+					TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+					task.wait(3) -- đợi server load
+					
+					-- Scan rương / trái xịn
+					local fruits = {}
+					for _,f in pairs(Workspace:GetDescendants()) do
+						if f:IsA("Tool") and f:FindFirstChild("Handle") then
+							if f:FindFirstChild("Epic") or f:FindFirstChild("Legendary") then
+								table.insert(fruits,f)
+							end
+						end
+					end
+
+					-- Nếu có trái xịn
+					if #fruits > 0 then
+						for _,fruit in ipairs(fruits) do
+							if fruit and fruit.Parent then
+								status.Text = "⚡ Nhặt: "..fruit.Name
+								hrp.CFrame = fruit.Handle.CFrame + Vector3.new(0,3,0)
+								if fruit:FindFirstChildOfClass("ClickDetector") then
+									fireclickdetector(fruit:FindFirstChildOfClass("ClickDetector"))
+								end
+								task.wait(1)
+							end
+						end
+						break -- tìm xong -> dừng scan tiếp
+					end
+				end
+			end
+		end
+		task.wait(0.5)
+	end
+end)
