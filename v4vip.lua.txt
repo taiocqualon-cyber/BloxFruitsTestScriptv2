@@ -1,0 +1,104 @@
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local cam = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local DomainActive = false
+
+-- ===== GUI ICON nhỏ =====
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+
+local icon = Instance.new("ImageButton", ScreenGui)
+icon.Size = UDim2.new(0,40,0,40)
+icon.Position = UDim2.new(0.02,0,0.05,0)
+icon.BackgroundColor3 = Color3.fromRGB(255,215,0)
+icon.Image = "rbxassetid://15059956542"
+
+-- ===== Bảng chức năng bên phải =====
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0,250,0,200)
+frame.Position = UDim2.new(0.1,0,0.05,0)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Visible = false
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,40)
+title.Text = "Tộc Quỷ V4"
+title.TextScaled = true
+title.TextColor3 = Color3.fromRGB(255,0,0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.SourceSansBold
+
+-- ===== Toggle ON/OFF =====
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(0.4,0,0,40)
+toggle.Position = UDim2.new(0.3,0,0.5,0)
+toggle.Text = "OFF"
+toggle.TextColor3 = Color3.fromRGB(255,255,255)
+toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+
+local particleParts = {}
+local auraParts = {}
+
+toggle.MouseButton1Click:Connect(function()
+    DomainActive = not DomainActive
+    toggle.Text = DomainActive and "ON" or "OFF"
+
+    if DomainActive then
+        -- ===== Camera cinematic đối diện =====
+        cam.CameraType = Enum.CameraType.Scriptable
+        cam.CFrame = CFrame.new(hrp.Position + Vector3.new(0,5,10), hrp.Position)
+
+        -- ===== Hiệu ứng thức tỉnh =====
+        for i=1,6 do
+            local p = Instance.new("Part", workspace)
+            p.Size = Vector3.new(2,2,2)
+            p.Anchored = true
+            p.Material = Enum.Material.Neon
+            p.Color = Color3.fromRGB(50,0,0)
+            p.CFrame = hrp.CFrame * CFrame.new(math.random(-5,5),0,math.random(-5,5))
+            local pe = Instance.new("ParticleEmitter", p)
+            pe.Rate = 150
+            pe.Speed = NumberRange.new(2,5)
+            pe.Size = NumberSequence.new(2)
+            pe.Color = ColorSequence.new(Color3.fromRGB(50,0,0))
+            table.insert(particleParts, p)
+        end
+
+        -- ===== Aura đỏ huyền bí quanh người =====
+        local aura = Instance.new("ParticleEmitter", hrp)
+        aura.Rate = 100
+        aura.Speed = NumberRange.new(5,10)
+        aura.Lifetime = NumberRange.new(1,2)
+        aura.Size = NumberSequence.new(3)
+        aura.Color = ColorSequence.new(Color3.fromRGB(100,0,0))
+        table.insert(auraParts, aura)
+
+        -- ===== Camera xoay 360° quanh nhân vật =====
+        task.spawn(function()
+            local t0 = tick()
+            while DomainActive do
+                RunService.RenderStepped:Wait()
+                local t = tick()-t0
+                local offset = Vector3.new(math.cos(t*2)*15,5,math.sin(t*2)*15)
+                cam.CFrame = CFrame.new(hrp.Position+offset, hrp.Position)
+            end
+        end)
+
+    else
+        -- ===== Tắt tất cả hiệu ứng =====
+        cam.CameraType = Enum.CameraType.Custom
+        for _,p in pairs(particleParts) do p:Destroy() end
+        for _,a in pairs(auraParts) do a:Destroy() end
+        particleParts = {}
+        auraParts = {}
+    end
+end)
+
+-- ===== Icon bấm mở menu =====
+icon.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
