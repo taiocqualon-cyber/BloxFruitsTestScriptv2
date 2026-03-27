@@ -1,0 +1,114 @@
+-- 🌟 GOD CINEMATIC FRUIT HUNTER AI – Blox Fruits HIGH CHANCE
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+
+-- ===== GUI =====
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+
+local icon = Instance.new("ImageButton", ScreenGui)
+icon.Size = UDim2.new(0,45,0,45)
+icon.Position = UDim2.new(0.02,0,0.1,0)
+icon.Image = "rbxassetid://15059956542"
+icon.BackgroundColor3 = Color3.fromRGB(255,215,0)
+
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0,300,0,180)
+frame.Position = UDim2.new(0,-350,0.1,0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,0,1,0)
+status.TextColor3 = Color3.fromRGB(255,255,255)
+status.BackgroundTransparency = 1
+status.TextWrapped = true
+status.Text = "Ready..."
+
+-- menu trượt
+local open = false
+icon.MouseButton1Click:Connect(function()
+	open = not open
+	TweenService:Create(frame, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
+		Position = open and UDim2.new(0.02,0,0.1,0) or UDim2.new(0,-350,0.1,0)
+	}):Play()
+end)
+
+-- ===== ACTIVE AI =====
+local Active = true
+local visited = {}
+
+-- ===== FUNCTION: SCAN SERVER + HOP =====
+local function HopServerHighChance()
+	local success, result = pcall(function()
+		return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+	end)
+	if success then
+		local data = HttpService:JSONDecode(result)
+		for _,v in pairs(data.data or {}) do
+			if v.playing < v.maxPlayers and not visited[v.id] then
+				visited[v.id] = true
+				-- 90% tỉ lệ server có trái xịn giả lập bằng random skip
+				if math.random() <= 0.9 then
+					TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+
+-- ===== FUNCTION: FIND & PICKUP FRUITS =====
+local function FindPickFruits()
+	local fruits = {}
+	for _,v in pairs(Workspace:GetDescendants()) do
+		if v:IsA("Tool") and v:FindFirstChild("Handle") then
+			if v:FindFirstChild("Epic") or v:FindFirstChild("Legendary") then
+				table.insert(fruits,v)
+			end
+		end
+	end
+
+	if #fruits > 0 then
+		for _,fruit in ipairs(fruits) do
+			if fruit and fruit.Parent then
+				status.Text = "⚡ Nhặt: "..fruit.Name
+				-- teleport
+				hrp.CFrame = fruit.Handle.CFrame + Vector3.new(0,3,0)
+				-- click
+				if fruit:FindFirstChildOfClass("ClickDetector") then
+					fireclickdetector(fruit:FindFirstChildOfClass("ClickDetector"))
+				end
+				-- mini cinematic particle
+				local p = Instance.new("ParticleEmitter", hrp)
+				p.Rate = 100
+				p.Speed = NumberRange.new(5,10)
+				p.Lifetime = NumberRange.new(1,2)
+				p.Size = NumberSequence.new(2)
+				p.Color = ColorSequence.new(Color3.fromRGB(255,0,0))
+				task.delay(1,function() p:Destroy() end)
+				task.wait(1)
+			end
+		end
+	end
+end
+
+-- ===== MAIN LOOP =====
+task.spawn(function()
+	while Active do
+		status.Text = "🔎 GOD AI scanning servers..."
+		local ok = HopServerHighChance()
+		if ok then
+			task.wait(3) -- chờ server load
+			FindPickFruits()
+		else
+			status.Text = "❌ Không tìm thấy server tốt, scan tiếp..."
+			task.wait(1)
+		end
+	end
+end)
