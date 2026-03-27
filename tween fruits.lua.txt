@@ -1,0 +1,114 @@
+-- AUTO FLY TO FRUIT + SUPER HOP SERVER (DELTA)
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+
+local plr = Players.LocalPlayer
+
+-- Danh sách trái bạn cần
+local TargetFruits = {
+    "kitsune","yeti","dough","t-rex","control",
+    "tiger","mammoth","spirit","venom","gas",
+    "gravity","portal","blizzard","pain"
+}
+
+-- Lưu server đã đi
+local visitedServers = {}
+local stats = {}
+
+for _, v in pairs(TargetFruits) do
+    stats[v] = 0
+end
+
+-- Check trái
+local function isTarget(name)
+    for _, v in pairs(TargetFruits) do
+        if name:lower() == v:lower() then
+            return true
+        end
+    end
+    return false
+end
+
+-- Bay tới trái
+local function flyTo(pos)
+    local char = plr.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local distance = (hrp.Position - pos).Magnitude
+    local tween = TweenService:Create(hrp, TweenInfo.new(distance/200, Enum.EasingStyle.Linear), {
+        CFrame = CFrame.new(pos)
+    })
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+-- Nhặt trái + bay tới
+local function findAndPickup()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Tool") and isTarget(v.Name) then
+            local handle = v:FindFirstChild("Handle")
+            if handle then
+                print("🎯 Phát hiện: "..v.Name)
+                
+                flyTo(handle.Position + Vector3.new(0,5,0))
+                wait(0.3)
+
+                pcall(function()
+                    firetouchinterest(handle, plr.Character.HumanoidRootPart, 0)
+                    firetouchinterest(handle, plr.Character.HumanoidRootPart, 1)
+                end)
+
+                stats[v.Name] += 1
+                print("✅ Đã nhặt: "..v.Name.." | Tổng: "..stats[v.Name])
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- Hop server xịn (ưu tiên ít người + tránh trùng)
+local function hop()
+    local placeId = game.PlaceId
+    local servers = {}
+
+    local success, res = pcall(function()
+        return game:HttpGet("https://games.roblox.com/v1/games/"..placeId.."/servers/Public?sortOrder=Asc&limit=100")
+    end)
+
+    if success then
+        local data = HttpService:JSONDecode(res)
+        for _, s in pairs(data.data) do
+            if s.playing < 10 and not visitedServers[s.id] then
+                table.insert(servers, s.id)
+            end
+        end
+    end
+
+    if #servers > 0 then
+        local chosen = servers[math.random(1,#servers)]
+        visitedServers[chosen] = true
+        TeleportService:TeleportToPlaceInstance(placeId, chosen, plr)
+    else
+        wait(3)
+        hop()
+    end
+end
+
+-- LOOP CHÍNH
+while true do
+    local found = findAndPickup()
+
+    if not found then
+        print("❌ Không có trái -> hop server...")
+        hop()
+        wait(0.5)
+    else
+        wait(1)
+    end
+end
