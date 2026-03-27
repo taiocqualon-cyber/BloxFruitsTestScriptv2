@@ -1,0 +1,129 @@
+-- 🦊 HUNTER V2 (SMART)
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local TARGET = "Kitsune"
+local hunting = true -- 🔥 bật sẵn
+
+-- ===== CHECK FRUIT =====
+local function isFruit(v)
+    return v:IsA("Tool") and v:FindFirstChild("Handle") and v.Parent == workspace
+end
+
+local function isKitsune(v)
+    return isFruit(v) and string.find(v.Name, TARGET)
+end
+
+-- ===== ESP NHẸ =====
+local function addESP(v)
+    if v:FindFirstChild("ESP") then return end
+
+    local b = Instance.new("BillboardGui", v)
+    b.Name = "ESP"
+    b.Size = UDim2.new(0,150,0,40)
+    b.AlwaysOnTop = true
+
+    local t = Instance.new("TextLabel", b)
+    t.Size = UDim2.new(1,0,1,0)
+    t.BackgroundTransparency = 1
+    t.TextColor3 = Color3.fromRGB(255,120,0)
+    t.TextScaled = true
+    t.Text = "🦊 KITSUNE"
+end
+
+-- ===== STORE =====
+local function store()
+    for _,t in pairs(plr.Backpack:GetChildren()) do
+        if t:IsA("Tool") then
+            pcall(function()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StoreFruit", t.Name)
+            end)
+        end
+    end
+end
+
+-- ===== SERVER LIST =====
+local function getServers()
+    local list = {}
+
+    local ok, res = pcall(function()
+        return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+    end)
+
+    if ok then
+        local data = HttpService:JSONDecode(res)
+        for _,s in pairs(data.data) do
+            if s.playing < s.maxPlayers-2 then
+                table.insert(list, s.id)
+            end
+        end
+    end
+
+    return list
+end
+
+-- ===== HOP =====
+local function changeServer()
+    local servers = getServers()
+    if #servers > 0 then
+        TeleportService:TeleportToPlaceInstance(
+            game.PlaceId,
+            servers[math.random(1,#servers)],
+            plr
+        )
+    end
+end
+
+-- ===== CHECK CÓ FRUIT KHÔNG =====
+local function hasAnyFruit()
+    for _,v in pairs(workspace:GetDescendants()) do
+        if isFruit(v) then return true end
+    end
+    return false
+end
+
+-- ===== LOOP =====
+while true do
+    if hunting then
+        local foundKitsune = false
+
+        -- 🔍 SCAN NHANH
+        for _,v in pairs(workspace:GetDescendants()) do
+            if isKitsune(v) then
+                foundKitsune = true
+
+                warn("🦊 KITSUNE FOUND !!!")
+
+                addESP(v)
+
+                -- 🚀 TP AN TOÀN
+                plr.Character.HumanoidRootPart.CFrame =
+                    v.Handle.CFrame + Vector3.new(0,3,0)
+
+                wait(0.4)
+                store()
+
+                break
+            end
+        end
+
+        -- ❌ KHÔNG CÓ KITSUNE
+        if not foundKitsune then
+
+            -- 🧠 LOGIC THÔNG MINH
+            if not hasAnyFruit() then
+                warn("❌ Server rỗng → đổi")
+                changeServer()
+                wait(3)
+            else
+                warn("🍈 Có fruit nhưng không phải Kitsune → scan tiếp")
+            end
+        end
+    end
+
+    wait(1)
+end
