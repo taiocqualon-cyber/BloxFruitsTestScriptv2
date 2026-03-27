@@ -1,0 +1,181 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+-- ===== CLEAR =====
+pcall(function()
+	player.PlayerGui:FindFirstChild("AI_DASHBOARD"):Destroy()
+end)
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "AI_DASHBOARD"
+gui.ResetOnSpawn = false
+
+-- ===== ICON =====
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0,20,0.4,0)
+icon.Text = "📊"
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+icon.TextScaled = true
+
+-- DRAG
+local dragging, start, pos
+
+icon.InputBegan:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		start = i.Position
+		pos = icon.Position
+	end
+end)
+
+UIS.InputChanged:Connect(function(i)
+	if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = i.Position - start
+		icon.Position = UDim2.new(pos.X.Scale,pos.X.Offset+delta.X,pos.Y.Scale,pos.Y.Offset+delta.Y)
+	end
+end)
+
+UIS.InputEnded:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+-- ===== MAIN =====
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0,420,0,260)
+main.Position = UDim2.new(0.3,0,0.3,0)
+main.BackgroundColor3 = Color3.fromRGB(10,10,10)
+main.Visible = false
+
+Instance.new("UICorner", main)
+
+icon.MouseButton1Click:Connect(function()
+	main.Visible = not main.Visible
+end)
+
+-- TITLE
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundTransparency = 1
+title.Text = "😈 AI DASHBOARD"
+title.TextScaled = true
+title.TextColor3 = Color3.fromRGB(200,100,255)
+
+-- LEFT MENU
+local left = Instance.new("Frame", main)
+left.Size = UDim2.new(0.3,0,1,-30)
+left.Position = UDim2.new(0,0,0,30)
+left.BackgroundColor3 = Color3.fromRGB(20,20,20)
+
+-- RIGHT PANEL
+local right = Instance.new("Frame", main)
+right.Size = UDim2.new(0.7,0,1,-30)
+right.Position = UDim2.new(0.3,0,0,30)
+right.BackgroundColor3 = Color3.fromRGB(15,15,15)
+
+-- TAB FUNCTION
+local function tab(name,y)
+	local b = Instance.new("TextButton", left)
+	b.Size = UDim2.new(1,0,0,40)
+	b.Position = UDim2.new(0,0,0,y)
+	b.Text = name
+	b.TextScaled = true
+	b.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	return b
+end
+
+local tDash = tab("📊 Dashboard",0)
+local tDomain = tab("😈 Domain",40)
+local tSystem = tab("⚙️ System",80)
+
+-- CONTENT TEXT
+local content = Instance.new("TextLabel", right)
+content.Size = UDim2.new(1,0,1,0)
+content.BackgroundTransparency = 1
+content.TextScaled = true
+content.Text = "SYSTEM READY"
+
+-- ===== AI DATA =====
+local time = 0
+local score = 0
+local state = "Idle"
+
+-- LOOP AI
+task.spawn(function()
+	while true do
+		task.wait(5)
+
+		time += 5
+
+		-- fake AI logic
+		if math.random(1,2) == 1 then
+			score += 2
+			state = "Scanning..."
+		else
+			score -= 1
+			state = "Idle"
+		end
+
+		local status = "BAD"
+		if score > 10 then
+			status = "GOOD"
+		end
+
+		content.Text =
+			"📊 TIME: "..time.."s\n"..
+			"📈 SCORE: "..score.."\n"..
+			"🧠 STATE: "..state.."\n"..
+			"🌐 SERVER: "..status
+	end
+end)
+
+-- ===== DOMAIN =====
+local function domain()
+	local cc = Instance.new("ColorCorrectionEffect", Lighting)
+	cc.TintColor = Color3.fromRGB(255,0,0)
+
+	for i=1,2 do
+		cc.Enabled = true
+		task.wait(0.4)
+		cc.Enabled = false
+		task.wait(0.4)
+	end
+
+	cc:Destroy()
+end
+
+local domainBtn = Instance.new("TextButton", right)
+domainBtn.Size = UDim2.new(0.8,0,0,40)
+domainBtn.Position = UDim2.new(0.1,0,0.6,0)
+domainBtn.Text = "😈 DOMAIN"
+domainBtn.BackgroundColor3 = Color3.fromRGB(120,0,0)
+domainBtn.TextScaled = true
+
+domainBtn.MouseButton1Click:Connect(domain)
+
+-- ===== TAB SWITCH =====
+tDash.MouseButton1Click:Connect(function()
+	content.Visible = true
+	domainBtn.Visible = false
+end)
+
+tDomain.MouseButton1Click:Connect(function()
+	content.Visible = false
+	domainBtn.Visible = true
+end)
+
+tSystem.MouseButton1Click:Connect(function()
+	content.Visible = true
+	domainBtn.Visible = false
+	content.Text = "⚙️ SYSTEM OK"
+end)
+
+domainBtn.Visible = false
