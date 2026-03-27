@@ -1,0 +1,150 @@
+-- 💀 GOD MODE V7 – FRUIT HUNTER MAX
+repeat task.wait() until game:IsLoaded()
+
+local player = game.Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+
+-- ===== GET HRP =====
+local function getHRP()
+	local char = player.Character or player.CharacterAdded:Wait()
+	return char:WaitForChild("HumanoidRootPart")
+end
+
+-- ===== TARGET =====
+local TargetFruits = {
+	"kitsune","yeti","dough","t-rex","control",
+	"tiger","mammoth","spirit","venom","gas",
+	"gravity","portal","blizzard","pain"
+}
+
+-- ===== CHECK =====
+local function isTarget(name)
+	name = string.lower(name)
+	for _,f in pairs(TargetFruits) do
+		if string.find(name,f) then
+			return true
+		end
+	end
+	return false
+end
+
+-- ===== ESP FRUIT =====
+local function createESP(obj)
+	if obj:FindFirstChild("GOD_ESP") then return end
+	
+	local billboard = Instance.new("BillboardGui", obj)
+	billboard.Name = "GOD_ESP"
+	billboard.Size = UDim2.new(0,100,0,40)
+	billboard.AlwaysOnTop = true
+	
+	local text = Instance.new("TextLabel", billboard)
+	text.Size = UDim2.new(1,0,1,0)
+	text.BackgroundTransparency = 1
+	text.TextColor3 = Color3.fromRGB(255,0,0)
+	text.TextStrokeTransparency = 0
+	text.Text = obj.Name
+end
+
+-- ===== EFFECT =====
+local function effect()
+	local hrp = getHRP()
+	
+	local p = Instance.new("ParticleEmitter", hrp)
+	p.Rate = 200
+	p.Lifetime = NumberRange.new(0.5,1)
+	p.Speed = NumberRange.new(5,10)
+	p.Size = NumberSequence.new(2)
+	p.Color = ColorSequence.new(Color3.fromRGB(255,0,0))
+	
+	task.delay(1,function() p:Destroy() end)
+end
+
+-- ===== FIND FRUIT =====
+local function findFruit()
+	for _,v in pairs(Workspace:GetDescendants()) do
+		if v:IsA("Tool") and v:FindFirstChild("Handle") then
+			if string.find(string.lower(v.Name),"fruit") and isTarget(v.Name) then
+				
+				createESP(v.Handle)
+				return v
+			end
+		end
+	end
+end
+
+-- ===== SERVER SYSTEM =====
+local visited = {}
+
+local function getServers()
+	local success, result = pcall(function()
+		return game:HttpGet(
+			"https://games.roblox.com/v1/games/"..
+			game.PlaceId..
+			"/servers/Public?limit=100"
+		)
+	end)
+
+	if success then
+		local data = HttpService:JSONDecode(result)
+		return data.data or {}
+	end
+	return {}
+end
+
+-- ===== SMART HOP =====
+local function smartHop()
+	local servers = getServers()
+	local best = {}
+
+	for _,s in pairs(servers) do
+		if s.playing < s.maxPlayers and not visited[s.id] then
+			if s.playing <= 5 then -- 🔥 server ít người
+				table.insert(best,s)
+			end
+		end
+	end
+
+	if #best == 0 then
+		for _,s in pairs(servers) do
+			if s.playing < s.maxPlayers and not visited[s.id] then
+				table.insert(best,s)
+			end
+		end
+	end
+
+	if #best == 0 then
+		visited = {}
+		return
+	end
+
+	local pick = best[math.random(1,#best)]
+	visited[pick.id] = true
+
+	TeleportService:TeleportToPlaceInstance(game.PlaceId, pick.id, player)
+end
+
+-- ===== MAIN =====
+while true do
+	local fruit = findFruit()
+
+	if fruit then
+		print("💎 FOUND:", fruit.Name)
+
+		local hrp = getHRP()
+		hrp.CFrame = fruit.Handle.CFrame + Vector3.new(0,3,0)
+
+		local cd = fruit:FindFirstChildOfClass("ClickDetector")
+		if cd then fireclickdetector(cd) end
+
+		effect()
+
+		task.wait(1)
+	else
+		print("🚀 HOP...")
+		smartHop()
+		task.wait(1)
+	end
+end
