@@ -1,0 +1,124 @@
+-- AUTO FARM + FULL SERVER + AUTO STORE (DELTA)
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local plr = Players.LocalPlayer
+
+-- Danh sách trái
+local TargetFruits = {
+    "kitsune","yeti","dough","t-rex","control",
+    "tiger","mammoth","spirit","venom","gas",
+    "gravity","portal","blizzard","pain"
+}
+
+local visitedServers = {}
+
+-- Check trái
+local function isTarget(name)
+    for _, v in pairs(TargetFruits) do
+        if name:lower() == v:lower() then
+            return true
+        end
+    end
+    return false
+end
+
+-- Bay tới trái
+local function flyTo(pos)
+    local char = plr.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local dist = (hrp.Position - pos).Magnitude
+    local tween = TweenService:Create(hrp, TweenInfo.new(dist/200, Enum.EasingStyle.Linear), {
+        CFrame = CFrame.new(pos)
+    })
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+-- AUTO STORE
+local function storeFruit()
+    pcall(function()
+        for _, tool in pairs(plr.Backpack:GetChildren()) do
+            if tool:IsA("Tool") and isTarget(tool.Name) then
+                -- Remote store của Blox Fruits
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StoreFruit", tool.Name)
+                print("📦 Đã store: "..tool.Name)
+            end
+        end
+    end)
+end
+
+-- Tìm + nhặt + store
+local function findFruit()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Tool") and isTarget(v.Name) then
+            local handle = v:FindFirstChild("Handle")
+            if handle then
+                print("🎯 Thấy: "..v.Name)
+
+                flyTo(handle.Position + Vector3.new(0,5,0))
+                wait(0.3)
+
+                pcall(function()
+                    firetouchinterest(handle, plr.Character.HumanoidRootPart, 0)
+                    firetouchinterest(handle, plr.Character.HumanoidRootPart, 1)
+                end)
+
+                print("✅ Nhặt: "..v.Name)
+                wait(0.5)
+                storeFruit() -- 💥 store ngay
+
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- Hop server đông
+local function hopFullServer()
+    local placeId = game.PlaceId
+    local servers = {}
+
+    local success, res = pcall(function()
+        return game:HttpGet("https://games.roblox.com/v1/games/"..placeId.."/servers/Public?sortOrder=Desc&limit=100")
+    end)
+
+    if success then
+        local data = HttpService:JSONDecode(res)
+        for _, s in pairs(data.data) do
+            if s.playing >= (s.maxPlayers * 0.8) and not visitedServers[s.id] then
+                table.insert(servers, s.id)
+            end
+        end
+    end
+
+    if #servers > 0 then
+        local chosen = servers[math.random(1,#servers)]
+        visitedServers[chosen] = true
+        TeleportService:TeleportToPlaceInstance(placeId, chosen, plr)
+    else
+        wait(3)
+        hopFullServer()
+    end
+end
+
+-- LOOP
+while true do
+    local found = findFruit()
+
+    if not found then
+        print("❌ Không có trái -> hop server đông...")
+        hopFullServer()
+        wait(0.5)
+    else
+        wait(1)
+    end
+end
