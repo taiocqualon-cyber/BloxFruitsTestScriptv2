@@ -1,0 +1,90 @@
+repeat wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+
+-- ===== STATE =====
+local running = false
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui", plr.PlayerGui)
+
+local btn = Instance.new("TextButton", gui)
+btn.Size = UDim2.new(0,120,0,40)
+btn.Position = UDim2.new(0,10,0.5,0)
+btn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+btn.TextColor3 = Color3.fromRGB(0,255,0)
+btn.TextScaled = true
+btn.Text = "START"
+
+-- toggle
+btn.MouseButton1Click:Connect(function()
+    running = not running
+    btn.Text = running and "STOP" or "START"
+end)
+
+-- ===== VỊ TRÍ =====
+local ISLANDS = {
+    Vector3.new(-385, 73, 300),
+    Vector3.new(-2600, 73, -5000),
+    Vector3.new(1200, 150, -1500),
+    Vector3.new(-5500, 100, -2500),
+    Vector3.new(-300, 100, -1000)
+}
+
+-- ===== HRP =====
+local function getHRP()
+    local char = plr.Character or plr.CharacterAdded:Wait()
+    return char:WaitForChild("HumanoidRootPart")
+end
+
+-- ===== CHEST =====
+local function getChests()
+    local list = {}
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and string.find(v.Name,"Chest") then
+            table.insert(list,v)
+        end
+    end
+    return list
+end
+
+local function getPos(chest)
+    for _,v in pairs(chest:GetDescendants()) do
+        if v:IsA("BasePart") then
+            return v.Position
+        end
+    end
+end
+
+-- ===== TELEPORT =====
+local function teleportTo(pos)
+    local hrp = getHRP()
+    hrp.CFrame = CFrame.new(pos + Vector3.new(0,3,0))
+end
+
+-- ===== MAIN =====
+while true do
+    wait(0.5)
+
+    if running then
+        for _,pos in pairs(ISLANDS) do
+
+            if not running then break end
+
+            teleportTo(pos)
+            wait(1)
+
+            for _,c in pairs(getChests()) do
+                if not running then break end
+
+                local p = getPos(c)
+                if p then
+                    teleportTo(p)
+                    wait(0.3)
+                end
+            end
+
+        end
+    end
+end
