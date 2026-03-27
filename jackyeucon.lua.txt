@@ -1,0 +1,118 @@
+repeat task.wait() until game:IsLoaded()
+
+-- ===== SERVICES =====
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+
+-- ===== UI =====
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+
+-- ICON
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0,10,0.2,0)
+icon.BackgroundColor3 = Color3.fromRGB(20,20,20)
+icon.Text = "🍏"
+icon.TextScaled = true
+icon.TextColor3 = Color3.new(1,1,1)
+
+-- MENU
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,250,0,150)
+frame.Position = UDim2.new(0,70,0.2,0)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.3
+frame.Visible = false
+
+icon.MouseButton1Click:Connect(function()
+	frame.Visible = not frame.Visible
+end)
+
+-- TEXT
+local info = Instance.new("TextLabel", frame)
+info.Size = UDim2.new(1,0,0.3,0)
+info.BackgroundTransparency = 1
+info.TextColor3 = Color3.new(1,1,1)
+info.TextScaled = true
+info.Text = "Đang chờ..."
+
+local timerText = Instance.new("TextLabel", frame)
+timerText.Size = UDim2.new(1,0,0.3,0)
+timerText.Position = UDim2.new(0,0,0.3,0)
+timerText.BackgroundTransparency = 1
+timerText.TextColor3 = Color3.fromRGB(0,255,0)
+timerText.TextScaled = true
+timerText.Text = "0s"
+
+-- BUTTON HOP
+local hopBtn = Instance.new("TextButton", frame)
+hopBtn.Size = UDim2.new(1,-20,0,40)
+hopBtn.Position = UDim2.new(0,10,0.65,0)
+hopBtn.BackgroundColor3 = Color3.fromRGB(120,0,0)
+hopBtn.TextColor3 = Color3.new(1,1,1)
+hopBtn.TextScaled = true
+hopBtn.Text = "💀 HOP SERVER"
+
+-- ===== STATUS =====
+local function setInfo(txt)
+	info.Text = txt
+end
+
+-- ===== TIMER =====
+local waitTime = 0
+local isSpamming = false
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		waitTime += 1
+
+		timerText.Text = "⏱️ "..waitTime.."s"
+
+		if isSpamming then
+			info.Text = "🔥 ĐANG SPAM FRUIT"
+		else
+			info.Text = "⏳ Đợi spawn..."
+		end
+	end
+end)
+
+-- ===== GOD FRUIT =====
+local GOD = {
+	Leopard=true,Dragon=true,Kitsune=true,
+	Dough=true,Venom=true,Spirit=true
+}
+
+local function isGod(name)
+	for k,_ in pairs(GOD) do
+		if string.find(string.lower(name),string.lower(k)) then
+			return true
+		end
+	end
+	return false
+end
+
+-- ===== ESP =====
+local function ESP(obj)
+	if obj:FindFirstChild("ESP") then return end
+
+	local bill = Instance.new("BillboardGui", obj)
+	bill.Size = UDim2.new(0,100,0,40)
+	bill.AlwaysOnTop = true
+
+	local txt = Instance.new("TextLabel", bill)
+	txt.Size = UDim2.new(1,0,1,0)
+	txt.BackgroundTransparency = 1
+	txt.TextColor3 = Color3.fromRGB(255,0,0)
+	txt.TextScaled = true
+	txt.Text = "🔥 "..obj.Name
+end
+
+-- ===== TP =====
+local function tp(pos)
+	local root = player.Character and player.Character:FindFirstChild("
