@@ -1,0 +1,135 @@
+-- 😈 ULTRA GOLD MOON HUB
+
+local player = game.Players.LocalPlayer
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+-- ===== GUI =====
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+
+-- ICON
+local icon = Instance.new("ImageButton", ScreenGui)
+icon.Size = UDim2.new(0,45,0,45)
+icon.Position = UDim2.new(0.02,0,0.1,0)
+icon.BackgroundColor3 = Color3.fromRGB(255,215,0)
+icon.Image = "rbxassetid://15059956542"
+
+-- GLOW
+local stroke = Instance.new("UIStroke", icon)
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(255,215,0)
+
+-- FRAME
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0,300,0,200)
+frame.Position = UDim2.new(0,-350,0.1,0)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.BackgroundTransparency = 0.1
+
+-- TITLE
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,35)
+title.Text = "ULTRA GOLD HUB 😈"
+title.TextColor3 = Color3.fromRGB(255,215,0)
+title.BackgroundTransparency = 1
+title.TextScaled = true
+
+-- STATUS
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,0,0,80)
+status.Position = UDim2.new(0,0,0.3,0)
+status.TextColor3 = Color3.fromRGB(255,255,255)
+status.BackgroundTransparency = 1
+status.TextWrapped = true
+
+-- BUTTON
+local btn = Instance.new("TextButton", frame)
+btn.Size = UDim2.new(0.6,0,0,35)
+btn.Position = UDim2.new(0.2,0,0.75,0)
+btn.Text = "🔥 FIND FULL MOON"
+btn.BackgroundColor3 = Color3.fromRGB(255,215,0)
+btn.TextColor3 = Color3.fromRGB(0,0,0)
+
+-- ===== ANIMATION =====
+local open = false
+icon.MouseButton1Click:Connect(function()
+	open = not open
+	
+	TweenService:Create(frame, TweenInfo.new(0.4), {
+		Position = open and UDim2.new(0.02,0,0.1,0) or UDim2.new(0,-350,0.1,0)
+	}):Play()
+end)
+
+-- ===== MOON CHECK =====
+local function GetMoon()
+	local t = Lighting.ClockTime
+	if t >= 0 and t <= 2 then
+		return 4, "🌕 FULL MOON"
+	elseif t <= 5 then
+		return 3, "🌖 GẦN FULL"
+	elseif t <= 12 then
+		return 2, "🌗 TRUNG"
+	else
+		return 1, "🌘 XA"
+	end
+end
+
+local function TimeToFull()
+	local t = Lighting.ClockTime
+	local remain = (24 - t) % 24
+	return math.floor(remain*60).."s"
+end
+
+-- ===== UPDATE UI =====
+task.spawn(function()
+	while true do
+		local lvl, txt = GetMoon()
+		status.Text = "Moon: "..txt..
+		"\nNext: "..TimeToFull()
+		task.wait(1)
+	end
+end)
+
+-- ===== AI SERVER MEMORY =====
+local visited = {}
+
+-- ===== FIND SERVER =====
+btn.MouseButton1Click:Connect(function()
+	status.Text = "🔎 AI đang scan server..."
+
+	local checked = 0
+
+	for i = 1,30 do
+		checked += 1
+
+		local lvl, txt = GetMoon()
+
+		if lvl == 4 then
+			status.Text = "🌕 FULL MOON FOUND!"
+			return
+		elseif lvl == 3 then
+			status.Text = "🌖 SERVER GOOD!"
+			return
+		end
+
+		status.Text = "🔄 Server "..checked.." không tốt..."
+
+		local req = game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+		local data = HttpService:JSONDecode(req)
+
+		for _,v in pairs(data.data) do
+			if v.playing < v.maxPlayers and not visited[v.id] then
+				visited[v.id] = true
+				TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+				break
+			end
+		end
+
+		task.wait(1.5)
+	end
+
+	status.Text = "❌ Không tìm thấy server tốt!"
+end)
