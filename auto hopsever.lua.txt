@@ -1,0 +1,132 @@
+-- 🌕 GOD MOON AI ULTRA CINEMATIC – Blox Fruits
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+-- ===== GUI ICON =====
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+local icon = Instance.new("ImageButton", ScreenGui)
+icon.Size = UDim2.new(0,45,0,45)
+icon.Position = UDim2.new(0.02,0,0.1,0)
+icon.Image = "rbxassetid://15059956542"
+icon.BackgroundColor3 = Color3.fromRGB(255,215,0)
+
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0,280,0,180)
+frame.Position = UDim2.new(0,-350,0.1,0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "GOD MOON AI 😈"
+title.TextColor3 = Color3.fromRGB(255,215,0)
+title.BackgroundTransparency = 1
+title.TextScaled = true
+
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,0,0,80)
+status.Position = UDim2.new(0,0,0.3,0)
+status.TextColor3 = Color3.fromRGB(255,255,255)
+status.BackgroundTransparency = 1
+status.TextWrapped = true
+
+local btn = Instance.new("TextButton", frame)
+btn.Size = UDim2.new(0.6,0,0,35)
+btn.Position = UDim2.new(0.2,0,0.75,0)
+btn.Text = "🔥 HOP SERVER"
+btn.BackgroundColor3 = Color3.fromRGB(255,215,0)
+btn.TextColor3 = Color3.fromRGB(0,0,0)
+
+-- menu trượt
+local open = false
+icon.MouseButton1Click:Connect(function()
+	open = not open
+	TweenService:Create(frame, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
+		Position = open and UDim2.new(0.02,0,0.1,0) or UDim2.new(0,-350,0.1,0)
+	}):Play()
+end)
+
+-- ===== MOON CHECK =====
+local function GetMoon()
+	local t = Lighting.ClockTime
+	if t >= 0 and t <= 2 then return 4, "🌕 FULL MOON"
+	elseif t <= 5 then return 3, "🌖 GẦN FULL"
+	else return 1, "🌘 / 🌗 CÒN XA" end
+end
+
+local function TimeToFull()
+	local t = Lighting.ClockTime
+	local remain = (24 - t) % 24
+	return math.floor(remain*60).."s"
+end
+
+task.spawn(function()
+	while true do
+		local lvl, txt = GetMoon()
+		status.Text = "Moon: "..txt.."\nNext: "..TimeToFull()
+		task.wait(1)
+	end
+end)
+
+-- ===== CINEMATIC MINI INTRO =====
+local function SpawnIntroEffect()
+	local aura = Instance.new("ParticleEmitter", hrp)
+	aura.Rate = 150
+	aura.Speed = NumberRange.new(5,10)
+	aura.Lifetime = NumberRange.new(1,2)
+	aura.Size = NumberSequence.new(3)
+	aura.Color = ColorSequence.new(Color3.fromRGB(255,0,0))
+
+	local particles = {}
+	for i=1,6 do
+		local p = Instance.new("Part", workspace)
+		p.Size = Vector3.new(1,1,1)
+		p.Anchored = true
+		p.Material = Enum.Material.Neon
+		p.Color = Color3.fromRGB(100,0,0)
+		p.CFrame = hrp.CFrame * CFrame.new(math.random(-3,3),0,math.random(-3,3))
+		local pe = Instance.new("ParticleEmitter", p)
+		pe.Rate = 150
+		pe.Speed = NumberRange.new(2,5)
+		pe.Lifetime = NumberRange.new(1,2)
+		pe.Size = NumberSequence.new(2)
+		pe.Color = ColorSequence.new(Color3.fromRGB(100,0,0))
+		table.insert(particles, p)
+	end
+	task.delay(5, function()
+		aura:Destroy()
+		for _,p in pairs(particles) do
+			if p then p:Destroy() end
+		end
+	end)
+end
+
+-- ===== HOP SERVER BUTTON =====
+local visited = {}
+btn.MouseButton1Click:Connect(function()
+	status.Text = "🔎 GOD AI đang tìm server 🌖🌕..."
+	SpawnIntroEffect()
+	task.spawn(function()
+		local success = false
+		local req = game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=50")
+		local data = HttpService:JSONDecode(req)
+		for _,v in pairs(data.data or {}) do
+			if v.playing < v.maxPlayers and not visited[v.id] then
+				visited[v.id] = true
+				success = true
+				status.Text = "⏩ Hop tới server: "..v.id
+				TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id, player)
+				break
+			end
+		end
+		if not success then
+			status.Text = "❌ Không tìm thấy server tốt"
+		end
+	end)
+end)
