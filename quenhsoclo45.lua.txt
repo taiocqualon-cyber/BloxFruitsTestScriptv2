@@ -1,0 +1,60 @@
+-- 🪟 WINDOW GOLD PERFECT
+local Window = Fluent:CreateWindow({
+	Title = "💛 quenh lọ đế",
+	SubTitle = "GOLD PERFECT 😈",
+	TabWidth = 157,
+	Size = UDim2.fromOffset(450, 300),
+	Acrylic = true,
+	Theme = "Dark",
+	MinimizeKey = Enum.KeyCode.End
+})
+
+-- 💛 NOTIFY
+Fluent:Notify({
+	Title = "💛 quenh lọ đế",
+	Content = "GOLD PERFECT ACTIVATED 😈",
+	Duration = 3
+})
+
+-- ===== EFFECT VÀNG =====
+task.spawn(function()
+	wait(0.5)
+
+	for _,v in pairs(game.CoreGui:GetDescendants()) do
+		
+		-- 🌟 TEXT VÀNG
+		if v:IsA("TextLabel") or v:IsA("TextButton") then
+			v.TextColor3 = Color3.fromRGB(255,215,0)
+		end
+
+		-- 🟤 BACKGROUND VÀNG ĐẬM
+		if v:IsA("Frame") then
+			v.BackgroundColor3 = Color3.fromRGB(30,25,0)
+		end
+
+		-- ✨ VIỀN GLOW
+		if v:IsA("Frame") and not v:FindFirstChild("Glow") then
+			local stroke = Instance.new("UIStroke")
+			stroke.Name = "Glow"
+			stroke.Color = Color3.fromRGB(255,215,0)
+			stroke.Thickness = 1.5
+			stroke.Parent = v
+		end
+	end
+end)
+
+-- ===== ANIMATION MỞ MENU =====
+local TweenService = game:GetService("TweenService")
+
+local function animateOpen(frame)
+	frame.Size = UDim2.fromOffset(0,0)
+	frame.Visible = true
+
+	local tween = TweenService:Create(frame, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
+		Size = UDim2.fromOffset(450,300)
+	})
+	tween:Play()
+end
+
+-- gọi animation khi mở
+Window:SelectTab(1)
