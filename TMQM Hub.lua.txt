@@ -1,0 +1,209 @@
+repeat task.wait() until game:IsLoaded()
+
+-- ===== SERVICES =====
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local cam = workspace.CurrentCamera
+
+repeat task.wait() until player.Character
+
+-- ===== CINEMATIC INTRO =====
+task.spawn(function()
+	local root = player.Character:WaitForChild("HumanoidRootPart")
+
+	local startCF = cam.CFrame
+	local zoomCF = root.CFrame * CFrame.new(0, 5, 10)
+
+	for i = 1, 20 do
+		cam.CFrame = cam.CFrame:Lerp(zoomCF, 0.1)
+		task.wait(0.02)
+	end
+
+	task.wait(0.3)
+
+	for i = 1, 20 do
+		cam.CFrame = cam.CFrame:Lerp(startCF, 0.1)
+		task.wait(0.02)
+	end
+end)
+
+-- ===== UI =====
+pcall(function()
+	player.PlayerGui:FindFirstChild("GOD_UI"):Destroy()
+end)
+
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "GOD_UI"
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0,420,0,260)
+main.Position = UDim2.new(0.3,0,0.3,0)
+main.BackgroundColor3 = Color3.fromRGB(10,10,10)
+
+Instance.new("UICorner", main)
+
+-- TITLE
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundTransparency = 1
+title.Text = "😈 GOD CINEMATIC AI"
+title.TextColor3 = Color3.fromRGB(180,100,255)
+title.TextScaled = true
+
+-- LEFT
+local left = Instance.new("Frame", main)
+left.Size = UDim2.new(0.3,0,1,-30)
+left.Position = UDim2.new(0,0,0,30)
+left.BackgroundColor3 = Color3.fromRGB(20,20,20)
+
+-- RIGHT
+local right = Instance.new("Frame", main)
+right.Size = UDim2.new(0.7,0,1,-30)
+right.Position = UDim2.new(0.3,0,0,30)
+right.BackgroundColor3 = Color3.fromRGB(15,15,15)
+
+-- TAB BUTTON
+local function tab(name, y)
+	local b = Instance.new("TextButton", left)
+	b.Size = UDim2.new(1,0,0,40)
+	b.Position = UDim2.new(0,0,0,y)
+	b.Text = name
+	b.TextScaled = true
+	b.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	b.TextColor3 = Color3.new(1,1,1)
+	return b
+end
+
+local tabFruit = tab("🍏 Fruits",0)
+local tabServer = tab("🌐 Server",40)
+
+-- CONTENT
+local content = Instance.new("TextLabel", right)
+content.Size = UDim2.new(1,0,1,0)
+content.BackgroundTransparency = 1
+content.TextScaled = true
+content.TextColor3 = Color3.new(1,1,1)
+content.Text = "Ready..."
+
+-- TOGGLE
+local autoFruit = true
+
+local toggle = Instance.new("TextButton", right)
+toggle.Size = UDim2.new(0.8,0,0,40)
+toggle.Position = UDim2.new(0.1,0,0.2,0)
+toggle.Text = "AUTO FRUIT: ON"
+toggle.BackgroundColor3 = Color3.fromRGB(80,0,0)
+toggle.TextScaled = true
+
+toggle.MouseButton1Click:Connect(function()
+	autoFruit = not autoFruit
+	toggle.Text = autoFruit and "AUTO FRUIT: ON" or "AUTO FRUIT: OFF"
+end)
+
+-- HOP
+local hopBtn = Instance.new("TextButton", right)
+hopBtn.Size = UDim2.new(0.8,0,0,40)
+hopBtn.Position = UDim2.new(0.1,0,0.5,0)
+hopBtn.Text = "💀 HOP SERVER"
+hopBtn.BackgroundColor3 = Color3.fromRGB(120,0,0)
+hopBtn.TextScaled = true
+
+-- TAB SWITCH
+tabFruit.MouseButton1Click:Connect(function()
+	content.Text = "🍏 Fruit System"
+	toggle.Visible = true
+	hopBtn.Visible = false
+end)
+
+tabServer.MouseButton1Click:Connect(function()
+	content.Text = "🌐 Server System"
+	toggle.Visible = false
+	hopBtn.Visible = true
+end)
+
+toggle.Visible = true
+hopBtn.Visible = false
+
+-- ===== FRUIT LIST =====
+local GOD = {
+	Leopard=true,Dragon=true,Kitsune=true,
+	Dough=true,Venom=true,Spirit=true
+}
+
+local function isGod(name)
+	for k,_ in pairs(GOD) do
+		if string.find(string.lower(name),string.lower(k)) then
+			return true
+		end
+	end
+	return false
+end
+
+-- ===== ESP ALL FRUITS =====
+local function ESP(obj, isGodFruit)
+	if obj:FindFirstChild("ESP") then return end
+
+	local bill = Instance.new("BillboardGui", obj)
+	bill.Name = "ESP"
+	bill.Size = UDim2.new(0,120,0,40)
+	bill.AlwaysOnTop = true
+
+	local txt = Instance.new("TextLabel", bill)
+	txt.Size = UDim2.new(1,0,1,0)
+	txt.BackgroundTransparency = 1
+	txt.TextScaled = true
+
+	if isGodFruit then
+		txt.TextColor3 = Color3.fromRGB(255,0,0)
+		txt.Text = "🔥 "..obj.Name
+	else
+		txt.TextColor3 = Color3.fromRGB(0,255,0)
+		txt.Text = obj.Name
+	end
+end
+
+-- ===== TP =====
+local function tp(pos)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if root then root.CFrame = CFrame.new(pos) end
+end
+
+-- ===== MAIN =====
+task.spawn(function()
+	while true do
+		task.wait(2)
+
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("Tool") and v:FindFirstChild("Handle") then
+				
+				local god = isGod(v.Name)
+				ESP(v, god)
+
+				if autoFruit and god then
+					content.Text = "🔥 "..v.Name
+					tp(v.Handle.Position + Vector3.new(0,2,0))
+				end
+			end
+		end
+	end
+end)
+
+-- ===== SMART HOP =====
+hopBtn.MouseButton1Click:Connect(function()
+	content.Text = "🔁 Finding server..."
+
+	local data = HttpService:JSONDecode(
+		game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")
+	)
+
+	for _,v in pairs(data.data) do
+		if v.playing >= 8 and v.playing < v.maxPlayers then
+			TeleportService:TeleportToPlaceInstance(game.PlaceId,v.id,player)
+			break
+		end
+	end
+end)
