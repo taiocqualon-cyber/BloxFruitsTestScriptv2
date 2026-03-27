@@ -1,0 +1,131 @@
+-- FULL TỘC QUỶ V4 THỨC TỈNH 100%
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local RunService = game:GetService("RunService")
+
+-- Toggle ON/OFF
+local DomainActive = false
+
+-- ===== GUI ICON nhỏ =====
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+
+local icon = Instance.new("ImageButton", ScreenGui)
+icon.Size = UDim2.new(0,40,0,40)
+icon.Position = UDim2.new(0.02,0,0.05,0)
+icon.BackgroundColor3 = Color3.fromRGB(255,215,0)
+icon.Image = "rbxassetid://15059956542"
+
+-- ===== Bảng chức năng bên phải =====
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0,250,0,150)
+frame.Position = UDim2.new(0.1,0,0.05,0)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Visible = false
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,40)
+title.Text = "Tộc Quỷ V4"
+title.TextScaled = true
+title.TextColor3 = Color3.fromRGB(255,0,0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.SourceSansBold
+
+-- Toggle button
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(0.4,0,0,40)
+toggle.Position = UDim2.new(0.3,0,0.5,0)
+toggle.Text = "OFF"
+toggle.TextColor3 = Color3.fromRGB(255,255,255)
+toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+
+-- ===== STORAGE hiệu ứng =====
+local particleParts = {}
+local auraParts = {}
+local wings = {}
+
+-- ===== FUNCTION TẠO CÁNH =====
+local function CreateWings()
+    for i=-1,1,2 do
+        local wing = Instance.new("Part", hrp)
+        wing.Size = Vector3.new(2,4,0.2)
+        wing.Anchored = false
+        wing.CanCollide = false
+        wing.Material = Enum.Material.Neon
+        wing.Color = Color3.fromRGB(0,0,0)
+        wing.CFrame = hrp.CFrame * CFrame.new(i*2,2,0)
+        wing.Name = "DemonWing"
+        wing.Parent = hrp
+        table.insert(wings, wing)
+    end
+end
+
+-- ===== FUNCTION TẠO PARTICLE AURA =====
+local function CreateParticles()
+    -- 6 particle quanh cơ thể
+    for i=1,6 do
+        local p = Instance.new("Part", workspace)
+        p.Size = Vector3.new(1,1,1)
+        p.Anchored = true
+        p.Material = Enum.Material.Neon
+        p.Color = Color3.fromRGB(50,0,0)
+        p.CFrame = hrp.CFrame * CFrame.new(math.random(-5,5),0,math.random(-5,5))
+        local pe = Instance.new("ParticleEmitter", p)
+        pe.Rate = 150
+        pe.Speed = NumberRange.new(2,5)
+        pe.Lifetime = NumberRange.new(1,2)
+        pe.Size = NumberSequence.new(2)
+        pe.Color = ColorSequence.new(Color3.fromRGB(50,0,0))
+        table.insert(particleParts, p)
+    end
+
+    -- Aura đỏ quanh người
+    local aura = Instance.new("ParticleEmitter", hrp)
+    aura.Rate = 100
+    aura.Speed = NumberRange.new(5,10)
+    aura.Lifetime = NumberRange.new(1,2)
+    aura.Size = NumberSequence.new(3)
+    aura.Color = ColorSequence.new(Color3.fromRGB(100,0,0))
+    table.insert(auraParts, aura)
+end
+
+-- ===== Toggle bật/tắt hiệu ứng =====
+toggle.MouseButton1Click:Connect(function()
+    DomainActive = not DomainActive
+    toggle.Text = DomainActive and "ON" or "OFF"
+
+    if DomainActive then
+        CreateWings()
+        CreateParticles()
+        -- Xoay cánh và particle
+        task.spawn(function()
+            while DomainActive do
+                RunService.RenderStepped:Wait()
+                for i, wing in pairs(wings) do
+                    if wing and wing.Parent then
+                        wing.CFrame = hrp.CFrame * CFrame.Angles(0, tick(), 0) * CFrame.new(i*2,2,0)
+                    end
+                end
+                for i, p in pairs(particleParts) do
+                    if p and p.Parent then
+                        p.CFrame = hrp.CFrame * CFrame.new(math.sin(tick()*i*2)*3,0,math.cos(tick()*i*2)*3)
+                    end
+                end
+            end
+        end)
+    else
+        -- Remove tất cả
+        for _, wing in pairs(wings) do if wing then wing:Destroy() end end
+        for _, p in pairs(particleParts) do if p then p:Destroy() end end
+        for _, a in pairs(auraParts) do if a then a:Destroy() end end
+        wings = {}
+        particleParts = {}
+        auraParts = {}
+    end
+end)
+
+-- ===== Icon bấm mở menu =====
+icon.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
