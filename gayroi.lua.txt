@@ -1,0 +1,77 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST- 666 HUB",
+   LoadingTitle = "Đang chiếm quyền điều khiển Server Log...",
+   KeySystem = true,
+   KeySettings = {
+      Title = "GHOST- 666 AUTH",
+      Key = {"GHOST-MASTER-666"}
+   }
+})
+
+-- [[ BIẾN HỆ THỐNG ]] --
+_G.FruitESP = true
+_G.ChaosMode = false
+
+-- [[ TAB: 🌀 SEVER MANIPULATION (THAO TÚNG) ]] --
+local ManipTab = Window:CreateTab("🌀 Manipulator", 4483362458)
+
+ManipTab:CreateSection("Hiệu Ứng Gây Rối (Chỉ bạn thấy - Để Quay Clip)")
+
+ManipTab:CreateButton({
+   Name = "🌌 Sky Glitch (Đổi bầu trời liên tục)",
+   Callback = function()
+      spawn(function()
+         for i = 1, 20 do
+            game:GetService("Lighting").ClockTime = math.random(0, 24)
+            task.wait(0.1)
+         end
+      end)
+      Rayfield:Notify({Title = "GHOST- 666", Content = "Đang làm nhiễu bầu trời server...", Duration = 3})
+   end,
+})
+
+ManipTab:CreateSection("Thao Túng Người Chơi (Mọi người đều thấy)")
+
+ManipTab:CreateButton({
+   Name = "📢 Thông Báo: SERVER RESTART (Fake)",
+   Callback = function()
+      local args = {
+          [1] = "HỆ THỐNG: SERVER SẼ ĐÓNG TRONG 10 GIÂY ĐỂ FIX LỖI HACKER! VUI LÒNG THOÁT GAME!",
+          [2] = "All"
+      }
+      game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
+   end,
+})
+
+ManipTab:CreateButton({
+   Name = "💀 Chat: TAO ĐANG THEO DÕI TẤT CẢ TỤI BÂY!",
+   Callback = function()
+      local args = {[1] = "GHOST-MASTER: TAO ĐANG THEO DÕI TẤT CẢ TỤI BÂY! ĐỪNG HÒNG NHẶT ĐƯỢC TRỨNG! 👹", [2] = "All"}
+      game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
+   end,
+})
+
+ManipTab:CreateButton({
+   Name = "🌈 Tạo Vòng Tròn Ma Thuật (Magic Circle)",
+   Callback = function()
+      -- Tạo hiệu ứng lửa đỏ dưới chân để dọa người chơi khác
+      local p = Instance.new("Part", game.Players.LocalPlayer.Character)
+      p.Anchored = false; p.CanCollide = false; p.Transparency = 1
+      p.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,-3,0)
+      local fire = Instance.new("Fire", p)
+      fire.Size = 20; fire.Heat = 10; fire.Color = Color3.new(1,0,0)
+      
+      Rayfield:Notify({Title = "GHOST- 666", Content = "Đã kích hoạt phong ấn ma thuật!", Duration = 5})
+      task.wait(10)
+      p:Destroy()
+   end,
+})
+
+-- [[ TAB: 🐣 EASTER & ESP (SĂN TRỨNG TRONG HỖN LOẠN) ]] --
+local EventTab = Window:CreateTab("🐣 Easter Hunter", 4483362458)
+EventTab:CreateToggle({Name = "Hiện Trứng (ESP)", CurrentValue = true, Callback = function(V) _G.EggESP = V end})
+EventTab:CreateButton({Name = "Bay tới Trứng (Tween)", Callback = function() TweenTo("Egg") end})
+
+-- [Logic Hop Server và ESP giữ nguyên như bản trước]
