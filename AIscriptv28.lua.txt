@@ -1,0 +1,183 @@
+--[[ 
+    GHOST PROTOCOL v35 | THE GHOST OVERLORD
+    - Smart Scanner: Ưu tiên quái gần nhất & HP thấp.
+    - Auto Stats: Tự động nâng Melee & Defense.
+    - Anti-Stuck: Tự động reset vị trí nếu không tìm thấy quái/NPC quá lâu.
+    - Weapon Master: Tự động lấy vũ khí Melee để đấm.
+]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- ===== DATABASE QUEST TỰ ĐỘNG (SEA 1) =====
+local Auto_Database = {
+    {Level = 1, NPC = "Bandit Quest Giver", QuestName = "Bandits", Monster = "Bandit", Pos = Vector3.new(1059, 15, 1547)},
+    {Level = 15, NPC = "Monkey Quest Giver", QuestName = "Monkeys", Monster = "Monkey", Pos = Vector3.new(-1598, 36, 153)},
+    {Level = 30, NPC = "Monkey Quest Giver", QuestName = "Gorillas", Monster = "Gorilla", Pos = Vector3.new(-1598, 36, 153)},
+    {Level = 35, NPC = "Pirate Quest Giver", QuestName = "Pirates", Monster = "Pirate", Pos = Vector3.new(-1141, 4, 3826)},
+    {Level = 60, NPC = "Desert Quest Giver", QuestName = "Desert Bandits", Monster = "Desert Bandit", Pos = Vector3.new(-3800, 25, 1200)},
+    {Level = 90, NPC = "Snow Quest Giver", QuestName = "Snowmen", Monster = "Snowman", Pos = Vector3.new(1389, 15, -2973)},
+    {Level = 120, NPC = "Marine Quest Giver", QuestName = "Vice Admiral", Monster = "Vice Admiral", Pos = Vector3.new(-4942, 20, 4323)}
+}
+
+-- ===== HÀM HỖ TRỢ THÔNG MINH (INTELLIGENCE) =====
+
+-- 1. Smart Scanner: Tìm quái tối ưu nhất
+local function getSmartTarget(monsterName, spawnPos)
+    local bestTarget = nil
+    local minDistance = 300
+    
+    for _, e in pairs(workspace.Enemies:GetChildren()) do
+        if e.Name == monsterName and e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 then
+            local dist = (e.HumanoidRootPart.Position - spawnPos).Magnitude
+            if dist < minDistance then
+                -- Ưu tiên quái máu thấp để dứt điểm nhanh
+                if not bestTarget or e.Humanoid.Health < bestTarget.Humanoid.Health then
+                    bestTarget = e
+                end
+            end
+        end
+    end
+    return bestTarget
+end
+
+-- 2. Auto Stats: Tự động nâng điểm (Melee/Defense tỉ lệ 3:2)
+local function autoStats()
+    local points = player.Data.StatsPoints.Value
+    if points > 0 then
+        local remotes = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("CommF_")
+        if remotes then
+            remotes:InvokeServer("AddPoint", "Melee", math.floor(points * 0.6))
+            remotes:InvokeServer("AddPoint", "Defense", math.floor(points * 0.4))
+        end
+    end
+end
+
+-- 3. Auto Equip: Tự động cầm vũ khí đấm (Melee)
+local function equipWeapon()
+    if not character:FindFirstChildOfClass("Tool") then
+        for _, tool in pairs(player.Backpack:GetChildren()) do
+            if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.Name:find("Combat")) then
+                character.Humanoid:EquipTool(tool)
+                break
+            end
+        end
+    end
+end
+
+-- 4. Anti-Stuck & Tween
+local lastActionTime = tick()
+local function safeTween(targetPos)
+    local dist = (hrp.Position - targetPos).Magnitude
+    if dist > 10 then
+        TweenService:Create(hrp, TweenInfo.new(dist/150, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos)}):Play()
+        lastActionTime = tick()
+    end
+end
+
+-- ===== UI GHOST v35 (👿) =====
+local sg = Instance.new("ScreenGui", player.PlayerGui)
+sg.Name = "GhostOverlord_v35"
+sg.ResetOnSpawn = false
+
+local btn = Instance.new("TextButton", sg)
+btn.Size = UDim2.new(0, 65, 0, 65)
+btn.Position = UDim2.new(0, 10, 0, 200)
+btn.Text = "👿"
+btn.TextSize = 45
+btn.BackgroundColor3 = Color3.new(0,0,0)
+btn.Draggable = true
+Instance.new("UICorner", btn).CornerRadius = UDim.new(1,0)
+Instance.new("UIStroke", btn).Color = Color3.fromRGB(255, 0, 0)
+
+local frame = Instance.new("Frame", sg)
+frame.Size = UDim2.new(0, 320, 0, 200)
+frame.Position = UDim2.new(0.5, -160, 0.4, -100)
+frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+frame.Visible = false
+Instance.new("UICorner", frame)
+Instance.new("UIStroke", frame).Color = Color3.fromRGB(255, 0, 0)
+
+btn.MouseButton1Click:Connect(function() frame.Visible = not frame.Visible end)
+
+local startBtn = Instance.new("TextButton", frame)
+startBtn.Size = UDim2.new(0.9, 0, 0, 60)
+startBtn.Position = UDim2.new(0.05, 0, 0.35, 0)
+startBtn.Text = "START OVERLORD AFK"
+startBtn.Font = Enum.Font.GothamBold
+startBtn.TextColor3 = Color3.new(1,1,1)
+startBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
+Instance.new("UICorner", startBtn)
+
+local running = false
+startBtn.MouseButton1Click:Connect(function()
+    running = not running
+    startBtn.Text = running and "OVERLORD [ON]" or "START OVERLORD AFK"
+    startBtn.BackgroundColor3 = running and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(40, 0, 0)
+end)
+
+-- ===== CHU TRÌNH ĐIỀU KHIỂN FINAL =====
+task.spawn(function()
+    while task.wait(0.15) do
+        if running then
+            -- Tự động hóa phụ trợ
+            equipWeapon()
+            autoStats()
+            
+            local myLv = player.Data.Level.Value
+            local cq = nil
+            for i = #Auto_Database, 1, -1 do
+                if myLv >= Auto_Database[i].Level then cq = Auto_Database[i]; break end
+            end
+            
+            if cq then
+                local pgui = player:FindFirstChild("PlayerGui")
+                local questActive = pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") and pgui.Main.Quest.Visible
+                
+                if not questActive then
+                    -- Bay nhận nhiệm vụ (Timeout Anti-Stuck)
+                    safeTween(cq.Pos + Vector3.new(0, 5, 0))
+                    task.wait(0.8)
+                    local commF = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("CommF_")
+                    if commF then commF:InvokeServer("StartQuest", cq.QuestName, 1) end
+                else
+                    -- Tìm mục tiêu thông minh
+                    local target = getSmartTarget(cq.Monster, cq.Pos)
+                    if target then
+                        -- Bay trên đầu né chiêu + Gom quái + Đấm tầm xa
+                        hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 25, 0)
+                        target.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0, -25, 0)
+                        target.HumanoidRootPart.CanCollide = false
+                        
+                        -- Tấn công Overlord
+                        local rem = ReplicatedStorage:FindFirstChild("Remotes")
+                        if rem and rem:FindFirstChild("CommF_") then
+                            rem.Validator:FireServer(tick(), 0)
+                            rem.CommF_:InvokeServer("AttackRemote", target.HumanoidRootPart.CFrame)
+                        end
+                        if ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules:FindFirstChild("Net") then
+                            ReplicatedStorage.Modules.Net.Attack:FireServer()
+                        end
+                    else
+                        -- Bay chờ tại bãi spawn
+                        safeTween(cq.Pos + Vector3.new(0, 55, 0))
+                    end
+                end
+            end
+            
+            -- Anti-Stuck: Nếu đứng yên quá 30s mà không có quái, Reset vị trí
+            if tick() - lastActionTime > 30 then
+                hrp.CFrame = hrp.CFrame * CFrame.new(0, 100, 0)
+                lastActionTime = tick()
+            end
+        end
+    end
+end)
+
+print("👿 GHOST v35 - OVERLORD FINAL LOADED! 🚀")
