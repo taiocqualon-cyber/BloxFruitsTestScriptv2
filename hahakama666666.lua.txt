@@ -1,0 +1,52 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST- 666 HUB",
+   LoadingTitle = "Đang hack vào băng tần Server...",
+   KeySystem = true,
+   KeySettings = {
+      Title = "GHOST- 666 AUTH",
+      Key = {"GHOST-MASTER-666"}
+   }
+})
+
+-- [[ TAB: 💀 HACKER REAL ]] --
+local HackerTab = Window:CreateTab("💀 Hacker Real", 4483362458)
+
+HackerTab:CreateSection("Thông điệp toàn Server")
+
+HackerTab:CreateButton({
+   Name = "Chat: TAO ĐẸP TRAI (Mọi người đều thấy)",
+   Callback = function()
+      -- Sử dụng hệ thống Chat tiêu chuẩn để đảm bảo mọi người đều nhận được
+      local args = {
+          [1] = "GHOST-MASTER: TAO ĐẸP TRAI NHẤT CÁI SERVER NÀY! 👹👹👹",
+          [2] = "All"
+      }
+      game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
+      
+      Rayfield:Notify({Title = "Thành công", Content = "Đã phát tán thông điệp!", Duration = 3})
+   end,
+})
+
+HackerTab:CreateToggle({
+   Name = "Spam Thông Điệp (Cẩn thận bị Kick)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.SpamHacker = Value
+      spawn(function()
+         while _G.SpamHacker do
+            local args = {[1] = "TAO ĐẸP TRAI!", [2] = "All"}
+            game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
+            task.wait(3) -- Đợi 3 giây để tránh bị hệ thống lọc spam
+         end
+      end)
+   end,
+})
+
+-- [[ GIỮ NGUYÊN TAB SĂN TRỨNG ĐỂ KHÔNG BỎ LỠ EVENT ]] --
+local EventTab = Window:CreateTab("🐣 Easter Hunter", 4483362458)
+EventTab:CreateToggle({Name = "Hiện Trứng (ESP)", CurrentValue = true, Callback = function(V) _G.EggESP = V end})
+EventTab:CreateButton({Name = "Bay tới Trứng (Tween)", Callback = function() TweenTo("Egg") end})
+
+-- [Logic Hop Server và ESP giữ nguyên như các bản trước]
