@@ -1,0 +1,123 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST HUB | V3.4 (HAKI)",
+   LoadingTitle = "Đang nạp năng lượng Haki Bóng Ma...",
+   KeySystem = true,
+   KeySettings = {
+      Title = "XÁC THỰC GHOST MASTER",
+      Key = {"GHOST-MASTER-666"}
+   }
+})
+
+-- [[ BIẾN HỆ THỐNG ]]
+_G.Settings = {
+    AutoFarm = false,
+    BringMob = true,
+    FastAttack = true,
+    AutoHaki = true, -- TỰ ĐỘNG BẬT HAKI
+    DistanceY = 8,
+    CurrentTarget = nil
+}
+
+-- [[ HÀM KÍCH HOẠT HAKI (FIXED) ]]
+function enableHaki()
+    if _G.Settings.AutoHaki then
+        -- Kiểm tra xem nhân vật đã có lớp phủ Haki chưa (Thường dựa trên Transparency hoặc tên Part)
+        -- Cách nhanh nhất là gửi Remote kích hoạt nếu chưa bật
+        local char = game.Players.LocalPlayer.Character
+        if not char:FindFirstChild("HasHaki") then -- Kiểm tra tag giả định hoặc trạng thái
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("HasBuso")
+        end
+    end
+end
+
+-- [[ HÀM TÌM NHIỆM VỤ (LEVEL 117 - SNOWMAN) ]]
+function getQuestData()
+    local lvl = game.Players.LocalPlayer.Data.Level.Value
+    if lvl >= 105 and lvl < 120 then 
+        return {"SnowQuest", "Snowman", 1}
+    elseif lvl >= 120 and lvl < 150 then 
+        return {"SnowQuest", "Yeti", 2}
+    else 
+        return {"BanditQuest1", "Bandit", 1}
+    end
+end
+
+-- [[ HÀM TẤN CÔNG & GOM QUÁI CHUYÊN SÂU ]]
+function attackAndBring(target, mobName)
+    local char = game.Players.LocalPlayer.Character
+    
+    -- 1. Bật Haki trước khi đánh
+    enableHaki()
+
+    -- 2. Chỉ cầm vũ khí một lần
+    if not char:FindFirstChildOfClass("Tool") then
+        for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+            if tool:IsA("Tool") then
+                char.Humanoid:EquipTool(tool)
+                break
+            end
+        end
+    end
+
+    -- 3. Gom quái (Bring Mob)
+    if _G.Settings.BringMob then
+        for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+            if v.Name == mobName and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                v.HumanoidRootPart.CanCollide = false
+                v.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame
+                v.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+            end
+        end
+    end
+
+    -- 4. Gây sát thương (Attack)
+    if _G.Settings.FastAttack then
+        local tool = char:FindFirstChildOfClass("Tool")
+        if tool then
+            tool:Activate()
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Attack")
+        end
+    end
+end
+
+-- [[ GIAO DIỆN ]]
+local MainTab = Window:CreateTab("Auto Farm", 4483362458)
+
+MainTab:CreateToggle({
+   Name = "Kích Hoạt Auto Farm V3.4",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.Settings.AutoFarm = Value
+      spawn(function()
+         while _G.Settings.AutoFarm do
+            task.wait()
+            pcall(function()
+                local player = game.Players.LocalPlayer
+                local data = getQuestData()
+                
+                if not player.PlayerGui.Main.Quest.Visible then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", data[1], data[3])
+                end
+                
+                for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                    if v.Name == data[2] and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                        player.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, _G.Settings.DistanceY, 0)
+                        attackAndBring(v, data[2])
+                        break 
+                    end
+                end
+            end)
+         end
+      end)
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Tự Động Bật Haki (Buso)",
+   CurrentValue = true,
+   Callback = function(Value) _G.Settings.AutoHaki = Value end,
+})
+
+Rayfield:Notify({Title = "GHOST HUB", Content = "Hệ thống Haki & Max Dame đã sẵn sàng!", Duration = 5})
