@@ -1,0 +1,82 @@
+-- Đây là bản Hacker tưởng tượng trên Blox Fruits
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local VirtualInput = game:GetService("VirtualInputManager")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+
+local HACKER = {
+    SilentAim = true,
+    TeleportLock = true,
+    FastAttack = true,
+    Target = nil,
+    SkillKeys = {"Z","X","C","V"},
+    FruitScan = true
+}
+
+-- ===== Tìm mục tiêu gần nhất =====
+local function getTarget()
+    local best, dist = nil, math.huge
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+            local d = (char.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if d < dist then
+                dist = d
+                best = p
+            end
+        end
+    end
+    return best
+end
+
+-- ===== Teleport Lock =====
+RunService.Heartbeat:Connect(function()
+    HACKER.Target = getTarget()
+    if HACKER.TeleportLock and HACKER.Target then
+        char.HumanoidRootPart.CFrame = HACKER.Target.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
+    end
+end)
+
+-- ===== Silent Aim =====
+local mt = getrawmetatable(game)
+local oldIdx = mt.__index
+setreadonly(mt, false)
+mt.__index = newcclosure(function(t,k)
+    if HACKER.SilentAim and t == player:GetMouse() and (k == "Hit" or k == "Target") and HACKER.Target then
+        local root = HACKER.Target.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            local pred = root.CFrame + (root.Velocity*0.15)
+            return (k=="Hit" and pred or root)
+        end
+    end
+    return oldIdx(t,k)
+end)
+setreadonly(mt, true)
+
+-- ===== Fast Attack / Skill Macro =====
+RunService.Stepped:Connect(function()
+    if HACKER.FastAttack and HACKER.Target then
+        local remote = ReplicatedStorage:FindFirstChild("RigControllerEvent") or ReplicatedStorage:FindFirstChild("CombatEvent")
+        if remote then remote:FireServer("Attack") end
+        for _, key in pairs(HACKER.SkillKeys) do
+            VirtualInput:SendKeyEvent(true, Enum.KeyCode[key], false, game)
+            task.wait(0.01)
+            VirtualInput:SendKeyEvent(false, Enum.KeyCode[key], false, game)
+        end
+    end
+end)
+
+-- ===== Fruit Finder =====
+task.spawn(function()
+    while task.wait(5) do
+        if HACKER.FruitScan then
+            for _, v in pairs(workspace:GetChildren()) do
+                if v.Name:find("Fruit") then
+                    print("👿 Found Fruit: "..v.Name)
+                end
+            end
+        end
+    end
+end)
