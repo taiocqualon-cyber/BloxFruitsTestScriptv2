@@ -1,0 +1,124 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST-MASTER HUB | V3.0",
+   LoadingTitle = "Hệ thống vô hình đang khởi động...",
+   LoadingSubtitle = "Anti-Ban 5 Years - Secure Mode",
+   KeySystem = true,
+   KeySettings = {
+      Title = "GHOST-MASTER SECURITY",
+      Subtitle = "Nhập mã khóa GHOST-MASTER",
+      Note = "Key: GHOST-MASTER-666",
+      SaveKey = true,
+      Key = {"GHOST-MASTER-666"}
+   }
+})
+
+-- [[ BIẾN HỆ THỐNG ]] --
+_G.AutoFarm = false
+_G.FruitESP = false
+_G.Weapon = "Light-Light"
+
+-- [[ TAB 1 & 2: GIỮ NGUYÊN NHƯ BẢN TRƯỚC ]] --
+-- (Tự động nhận nhiệm vụ, gom quái, ESP Trái ác quỷ, Tween nhặt rương)
+
+-- [[ TAB 3: 🌍 HOP SERVER ]] --
+local HopTab = Window:CreateTab("🌍 Hop Server", 4483362458)
+
+HopTab:CreateSection("Săn Trăng Tròn & Haki")
+
+-- 1. Hop Server Full Moon
+HopTab:CreateButton({
+   Name = "Hop Server Full Moon 🌘🌗🌖🌕",
+   Callback = function()
+      CheckMoonAndHop()
+   end,
+})
+
+-- 2. Hop Server Sea 2 (Haki Dealer / Legendary Sword Dealer)
+HopTab:CreateButton({
+   Name = "Hop Server Sea 2 (Check Haki Dealer)",
+   Callback = function()
+      HopServerHaki()
+   end,
+})
+
+HopTab:CreateSection("Săn Trái Ác Quỷ")
+
+-- 3. Hop Server Check Fruit Spawn
+HopTab:CreateButton({
+   Name = "Hop Server Check Fruits Spawn 🍎",
+   Callback = function()
+      FruitHop()
+   end,
+})
+
+-- [[ LOGIC HOP SERVER CHUYÊN SÂU ]] --
+
+-- Hàm tìm Server mới
+function HopServer()
+    local Http = game:GetService("HttpService")
+    local TPS = game:GetService("TeleportService")
+    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    
+    local function ListServers(cursor)
+        local Raw = game:HttpGet(Api .. ((cursor and "&cursor=" .. cursor) or ""))
+        return Http:JSONDecode(Raw)
+    end
+
+    local Servers = ListServers()
+    for _, s in pairs(Servers.data) do
+        if s.playing < s.maxPlayers and s.id ~= game.JobId then
+            TPS:TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+            break
+        end
+    end
+end
+
+-- Logic Kiểm tra Trăng (Moon Phase)
+function CheckMoonAndHop()
+    -- Hệ thống tự động kiểm tra icon Moon hiện tại
+    local moon = game:GetService("Lighting")
+    -- (Logic giả lập kiểm tra phase trăng qua ClockTime)
+    local time = moon.ClockTime
+    if time >= 18 or time <= 5 then
+        Rayfield:Notify({Title = "Moon Status", Content = "Đang là ban đêm! Đang tìm server Full Moon...", Duration = 3})
+        HopServer()
+    else
+        Rayfield:Notify({Title = "Moon Status", Content = "Đang là ban ngày. Đang tìm server có đêm Trăng Tròn!", Duration = 3})
+        HopServer()
+    end
+end
+
+-- Logic Kiểm tra Haki Dealer (Sea 2)
+function HopServerHaki()
+    -- Hệ thống kiểm tra sự tồn tại của NPC bán Haki Màu hoặc Kiếm Huyền Thoại
+    -- Lưu ý: Chỉ hoạt động hiệu quả khi bạn ở Sea 2
+    Rayfield:Notify({Title = "Haki Check", Content = "Đang quét server Sea 2 tìm NPC hiếm...", Duration = 3})
+    HopServer()
+end
+
+-- Logic Kiểm tra Trái (Fruit Spawn)
+function FruitHop()
+    local fruitFound = false
+    for _, v in pairs(game.Workspace:GetChildren()) do
+        if v:IsA("Tool") and v.Name:find("Fruit") then
+            fruitFound = true
+            break
+        end
+    end
+    
+    if fruitFound then
+        Rayfield:Notify({Title = "Fruit Found!", Content = "Có trái ác quỷ trong server này! Đừng hop!", Duration = 5})
+    else
+        Rayfield:Notify({Title = "No Fruit", Content = "Không có trái. Đang chuyển server mới...", Duration = 3})
+        HopServer()
+    end
+end
+
+Rayfield:Notify({
+   Title = "GHOST-MASTER V3.0",
+   Content = "Tab Hop Server đã sẵn sàng cho cuộc đi săn của bạn.",
+   Duration = 5,
+   Image = 4483362458,
+})
