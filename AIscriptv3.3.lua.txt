@@ -1,0 +1,116 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST HUB | Blox Fruits V3.2",
+   LoadingTitle = "Đang ổn định tọa độ Bóng Ma...",
+   LoadingSubtitle = "by Ghost Master",
+   KeySystem = true,
+   KeySettings = {
+      Title = "XÁC THỰC GHOST MASTER",
+      Key = {"GHOST-MASTER-666"}
+   }
+})
+
+-- [[ BIẾN ĐIỀU KHIỂN ]]
+_G.Settings = {
+    AutoFarm = false,
+    DistanceY = 8,
+    Weapon = "Melee", -- Đổi thành "Sword" nếu ngài dùng kiếm
+    TargetMob = nil
+}
+
+-- [[ HÀM TÌM NHIỆM VỤ CHUẨN (FIX LEVEL 117) ]]
+function getQuestData()
+    local lvl = game.Players.LocalPlayer.Data.Level.Value
+    -- Cấu trúc: {Tên Quest, Tên Quái, ID Nhiệm vụ}
+    if lvl >= 1 and lvl < 15 then return {"BanditQuest1", "Bandit", 1}
+    elseif lvl >= 15 and lvl < 30 then return {"MonkeyQuest1", "Monkey", 1}
+    elseif lvl >= 30 and lvl < 60 then return {"MonkeyQuest1", "Gorilla", 2}
+    elseif lvl >= 105 and lvl < 120 then return {"SnowQuest", "Snowman", 1} -- Level 117 của ngài ở đây
+    elseif lvl >= 120 and lvl < 150 then return {"SnowQuest", "Yeti", 2}
+    else return {"BanditQuest1", "Bandit", 1} end
+end
+
+-- [[ HÀM KHÓA MỤC TIÊU (FIX LỖI TELEPORT LUNG TUNG) ]]
+function getSingleTarget(mobName)
+    -- Nếu mục tiêu cũ vẫn còn sống, tiếp tục đánh nó
+    if _G.Settings.TargetMob and _G.Settings.TargetMob:FindFirstChild("Humanoid") and _G.Settings.TargetMob.Humanoid.Health > 0 then
+        return _G.Settings.TargetMob
+    end
+    -- Nếu không, tìm một con quái mới
+    for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+        if v.Name == mobName and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+            _G.Settings.TargetMob = v
+            return v
+        end
+    end
+    return nil
+end
+
+-- [[ TAB AUTO FARM ]]
+local MainTab = Window:CreateTab("Auto Farm", 4483362458)
+
+MainTab:CreateToggle({
+   Name = "Bật Auto Farm (Dịch chuyển ổn định)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.Settings.AutoFarm = Value
+      spawn(function()
+         while _G.Settings.AutoFarm do
+            task.wait() -- Dùng task.wait để mượt hơn
+            pcall(function()
+                local player = game.Players.LocalPlayer
+                local char = player.Character
+                local data = getQuestData()
+                
+                -- 1. Tự nhận nhiệm vụ
+                if not player.PlayerGui.Main.Quest.Visible then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", data[1], data[3])
+                end
+                
+                -- 2. Tìm quái duy nhất (Lock Target)
+                local mob = getSingleTarget(data[2])
+                
+                if mob and char:FindFirstChild("HumanoidRootPart") then
+                    -- Tự cầm vũ khí
+                    for _, tool in pairs(player.Backpack:GetChildren()) do
+                        if tool:IsA("Tool") then char.Humanoid:EquipTool(tool) end
+                    end
+                    
+                    -- Dịch chuyển đến quái (Chỉ 1 con này thôi)
+                    char.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, _G.Settings.DistanceY, 0)
+                    
+                    -- Tự động đánh (Gây Dame)
+                    game:GetService("VirtualUser"):CaptureController()
+                    game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
+                    
+                    -- Tắt va chạm để không bị quái đẩy
+                    mob.HumanoidRootPart.CanCollide = false
+                end
+            end)
+         end
+      end)
+   end,
+})
+
+-- [[ TAB ESP (FIXED) ]]
+local VisualTab = Window:CreateTab("Thị Giác", 4483345998)
+VisualTab:CreateToggle({
+   Name = "ESP Người Chơi (Highlight)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.ESP = Value
+      while _G.ESP do
+         task.wait(2)
+         for _, p in pairs(game.Players:GetPlayers()) do
+            if p ~= game.Players.LocalPlayer and p.Character then
+               if not p.Character:FindFirstChild("GHOST_Highlight") then
+                  local h = Instance.new("Highlight", p.Character)
+                  h.Name = "GHOST_Highlight"
+                  h.FillColor = Color3.fromRGB(255, 0, 0)
+               end
+            end
+         end
+      end
+   end,
+})
