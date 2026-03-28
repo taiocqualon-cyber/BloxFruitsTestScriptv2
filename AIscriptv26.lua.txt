@@ -1,0 +1,156 @@
+--[[ 
+    GHOST PROTOCOL v31 | STABLE & OPTIMIZED
+    Improvements: Safety Checks, Dynamic NPC, Performance Boost.
+]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- ===== DATABASE QUEST (SEA 1) =====
+local Sea1_Quests = {
+    {Level = 1, NPC = "Bandit Quest Giver", QuestName = "Bandits", Monster = "Bandit", Pos = Vector3.new(1059, 15, 1547)},
+    {Level = 15, NPC = "Monkey Quest Giver", QuestName = "Monkeys", Monster = "Monkey", Pos = Vector3.new(-1598, 36, 153)},
+    {Level = 30, NPC = "Monkey Quest Giver", QuestName = "Gorillas", Monster = "Gorilla", Pos = Vector3.new(-1598, 36, 153)},
+    {Level = 35, NPC = "Pirate Quest Giver", QuestName = "Pirates", Monster = "Pirate", Pos = Vector3.new(-1141, 4, 3826)},
+    {Level = 60, NPC = "Desert Quest Giver", QuestName = "Desert Bandits", Monster = "Desert Bandit", Pos = Vector3.new(-3800, 25, 1200)},
+    {Level = 90, NPC = "Snow Quest Giver", QuestName = "Snowmen", Monster = "Snowman", Pos = Vector3.new(2800, 20, -3200)},
+    {Level = 120, NPC = "Marine Quest Giver", QuestName = "Vice Admiral", Monster = "Vice Admiral", Pos = Vector3.new(-4942, 20, 4323)}
+}
+
+-- ===== HÀM KIỂM TRA NPC ĐỘNG (DYNAMIC FINDER) =====
+local function getNPCCFrame(npcName)
+    local npcFolder = workspace:FindFirstChild("NPCs")
+    if npcFolder then
+        local npc = npcFolder:FindFirstChild(npcName)
+        if npc and npc:IsA("Model") and npc.PrimaryPart then
+            return npc.PrimaryPart.CFrame
+        end
+    end
+    return nil
+end
+
+-- ===== HÀM TẤN CÔNG AN TOÀN (SAFE ATTACK) =====
+local function safeAttack(target)
+    if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+        local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+        if remotes then
+            local validator = remotes:FindFirstChild("Validator")
+            local commF = remotes:FindFirstChild("CommF_")
+            
+            if validator then validator:FireServer(tick(), 0) end
+            if commF then commF:InvokeServer("AttackRemote", target.HumanoidRootPart.CFrame) end
+        end
+        
+        -- Kiểm tra Module Net Attack
+        local netModule = ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules:FindFirstChild("Net")
+        if netModule and netModule:FindFirstChild("Attack") then
+            netModule.Attack:FireServer()
+        end
+    end
+end
+
+-- ===== LOGIC KIỂM TRA QUEST GUI =====
+local function isQuestActive()
+    local playerGui = player:FindFirstChild("PlayerGui")
+    if playerGui then
+        local mainGui = playerGui:FindFirstChild("Main")
+        if mainGui and mainGui:FindFirstChild("Quest") then
+            return mainGui.Quest.Visible
+        end
+    end
+    return false
+end
+
+-- ===== UI GHOST HUB (👿) =====
+local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+screenGui.Name = "GhostStable_v31"
+screenGui.ResetOnSpawn = false
+
+local iconBtn = Instance.new("TextButton", screenGui)
+iconBtn.Size = UDim2.new(0, 60, 0, 60)
+iconBtn.Position = UDim2.new(0, 20, 0, 150)
+iconBtn.Text = "👿"
+iconBtn.TextSize = 40
+iconBtn.BackgroundColor3 = Color3.new(0,0,0)
+iconBtn.Draggable = true
+Instance.new("UICorner", iconBtn).CornerRadius = UDim.new(1,0)
+Instance.new("UIStroke", iconBtn).Color = Color3.fromRGB(0, 255, 200)
+
+local main = Instance.new("Frame", screenGui)
+main.Size = UDim2.new(0, 300, 0, 150)
+main.Position = UDim2.new(0.5, -150, 0.4, -75)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+main.Visible = false
+Instance.new("UICorner", main)
+
+iconBtn.MouseButton1Click:Connect(function() main.Visible = not main.Visible end)
+
+local startBtn = Instance.new("TextButton", main)
+startBtn.Size = UDim2.new(0.9, 0, 0, 50)
+startBtn.Position = UDim2.new(0.05, 0, 0.3, 0)
+startBtn.Text = "START STABLE FARM"
+startBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+startBtn.TextColor3 = Color3.new(1,1,1)
+
+local isAuto = false
+startBtn.MouseButton1Click:Connect(function()
+    isAuto = not isAuto
+    startBtn.Text = isAuto and "STABLE [ON]" or "START STABLE FARM"
+    startBtn.BackgroundColor3 = isAuto and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(35, 35, 35)
+end)
+
+-- ===== HÀM DI CHUYỂN TWEEN =====
+local function safeTween(targetCF)
+    local dist = (hrp.Position - targetCF.p).Magnitude
+    local tween = TweenService:Create(hrp, TweenInfo.new(dist/150, Enum.EasingStyle.Linear), {CFrame = targetCF})
+    tween:Play()
+    return tween
+end
+
+-- ===== CHƯƠNG TRÌNH ĐIỀU KHIỂN CHÍNH (LOOP) =====
+task.spawn(function()
+    while task.wait(0.2) do -- Tăng lên 0.2s để giảm tải cho CPU (Performance)
+        if isAuto then
+            local myLevel = player.Data.Level.Value
+            local cq = nil
+            
+            for i = #Sea1_Quests, 1, -1 do
+                if myLevel >= Sea1_Quests[i].Level then cq = Sea1_Quests[i]; break end
+            end
+            
+            if cq then
+                if not isQuestActive() then
+                    -- Tìm NPC động, nếu không thấy dùng tọa độ tĩnh dự phòng
+                    local npcCF = getNPCCFrame(cq.NPC) or CFrame.new(cq.Pos)
+                    safeTween(npcCF * CFrame.new(0, 5, 0))
+                    task.wait(0.7)
+                    local commF = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("CommF_")
+                    if commF then commF:InvokeServer("StartQuest", cq.QuestName, 1) end
+                else
+                    local enemyFound = false
+                    for _, e in pairs(workspace.Enemies:GetChildren()) do
+                        if e.Name == cq.Monster and e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 then
+                            enemyFound = true
+                            -- Tween lơ lửng trên đầu
+                            hrp.CFrame = e.HumanoidRootPart.CFrame * CFrame.new(0, 20, 0)
+                            -- Gom quái (Mob Bring)
+                            e.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0, -20, 0)
+                            e.HumanoidRootPart.CanCollide = false
+                            -- Tấn công
+                            safeAttack(e)
+                        end
+                    end
+                    if not enemyFound then safeTween(CFrame.new(cq.Pos + Vector3.new(0, 60, 0))) end
+                end
+            end
+        end
+    end
+end)
+
+print("👿 GHOST v31 - STABLE VERSION LOADED! 🚀")
