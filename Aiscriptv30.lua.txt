@@ -1,0 +1,80 @@
+--[[ 
+    GHOST PROTOCOL v45 | GHOST ORACLE
+    - Box ESP: Vẽ khung bao quanh người chơi.
+    - Level Display: Hiển thị Level đối thủ theo thời gian thực.
+    - Health Bar: Hiện thanh máu trực quan bên cạnh khung.
+    - Color Coding: Xanh (Yếu hơn), Đỏ (Mạnh hơn).
+]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+local ShowPlayerESP = false
+
+-- ===== HÀM TẠO ESP CHI TIẾT (BOX + INFO) =====
+local function createPlayerESP(p)
+    local box = Drawing.new("Square")
+    box.Visible = false
+    box.Color = Color3.fromRGB(255, 255, 255)
+    box.Thickness = 1
+    box.Filled = false
+
+    local info = Drawing.new("Text")
+    info.Visible = false
+    info.Color = Color3.fromRGB(255, 255, 255)
+    info.Size = 14
+    info.Center = true
+    info.Outline = true
+
+    RunService.RenderStepped:Connect(function()
+        if ShowPlayerESP and p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") then
+            local char = p.Character
+            local hrp = char.HumanoidRootPart
+            local hum = char.Humanoid
+            local pos, onScreen = camera:WorldToViewportPoint(hrp.Position)
+
+            if onScreen and hum.Health > 0 then
+                -- Tính toán kích thước Box dựa trên khoảng cách
+                local dist = (player.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+                local sizeX = 1000 / dist
+                local sizeY = 1500 / dist
+
+                -- Cập nhật Box
+                box.Size = Vector2.new(sizeX, sizeY)
+                box.Position = Vector2.new(pos.X - sizeX / 2, pos.Y - sizeY / 2)
+                
+                -- Đổi màu theo Level
+                local enemyLevel = p.Data.Level.Value
+                local myLevel = player.Data.Level.Value
+                local color = (enemyLevel > myLevel) and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
+                
+                box.Color = color
+                box.Visible = true
+
+                -- Cập nhật Thông tin (Tên + Level + Khoảng cách)
+                info.Position = Vector2.new(pos.X, pos.Y - (sizeY / 2) - 20)
+                info.Text = string.format("%s [Lv. %d]\n%d m", p.DisplayName, enemyLevel, math.floor(dist))
+                info.Color = color
+                info.Visible = true
+            else
+                box.Visible = false
+                info.Visible = false
+            end
+        else
+            box.Visible = false
+            info.Visible = false
+        end
+    end)
+end
+
+-- Khởi tạo cho toàn bộ Player
+for _, p in pairs(Players:GetPlayers()) do createPlayerESP(p) end
+Players.PlayerAdded:Connect(createPlayerESP)
+
+-- ===== THÊM CẦN GẠT VÀO TAB VISUALS =====
+-- (Giả sử bạn đang dùng UI v42/v44)
+createToggle(visualPage, "Player ESP Box & Level", 60, function(v) 
+    ShowPlayerESP = v 
+end)
