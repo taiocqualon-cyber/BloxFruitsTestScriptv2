@@ -1,0 +1,79 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST- 666 HUB",
+   LoadingTitle = "Đang kích hoạt radar săn Trứng Phục Sinh...",
+   LoadingSubtitle = "Easter Event 2026 - Active",
+   KeySystem = true,
+   KeySettings = {
+      Title = "GHOST- 666 AUTH",
+      Key = {"GHOST-MASTER-666"}
+   }
+})
+
+-- [[ BIẾN HỆ THỐNG ]] --
+_G.FruitESP = false
+_G.EggESP = true -- Mặc định bật để săn trứng ngay
+_G.NPC_ESP = false
+_G.TweenSpeed = 350
+
+-- [[ TAB 1: 🌍 EVENT & HOP ]] --
+local EventTab = Window:CreateTab("🐣 Easter Event", 4483362458)
+
+EventTab:CreateToggle({
+   Name = "Hiện Vị Trí Trứng (Egg ESP)",
+   CurrentValue = true,
+   Callback = function(Value) _G.EggESP = Value end,
+})
+
+EventTab:CreateButton({
+   Name = "Tween tới Trứng gần nhất",
+   Callback = function() TweenToTarget("Egg") end,
+})
+
+EventTab:CreateButton({
+   Name = "Hop Server săn Trứng mới",
+   Callback = function() SecureHop() end,
+})
+
+-- [[ TAB 2: 👁️ VISUAL ESP ]] --
+local ESPTab = Window:CreateTab("👁️ Visual ESP", 4483362458)
+ESPTab:CreateToggle({Name = "Hiện Trái Ác Quỷ", CurrentValue = false, Callback = function(V) _G.FruitESP = V end})
+ESPTab:CreateToggle({Name = "Hiện NPC Hiếm", CurrentValue = false, Callback = function(V) _G.NPC_ESP = V end})
+
+-- [[ TAB 3: 🏝️ ISLANDS (AUTO-SEA) ]] --
+-- (Giữ nguyên logic nhận diện Sea từ bản V8.0/V9.0 của bạn)
+
+-- [[ LOGIC QUÉT TRỨNG & ESP ]] --
+function TweenToTarget(name)
+    for _, v in pairs(game.Workspace:GetChildren()) do
+        if v.Name:find("Egg") or v.Name:find("Easter") then
+            local dist = (v.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(dist/_G.TweenSpeed), {CFrame = v.CFrame}):Play()
+            break
+        end
+    end
+end
+
+spawn(function()
+    while task.wait(1.5) do
+        if _G.EggESP then
+            for _, v in pairs(game.Workspace:GetChildren()) do
+                -- Quét các Object có tên liên quan đến Trứng sự kiện
+                if (v.Name:find("Egg") or v.Name:find("Easter")) and not v:FindFirstChild("GhostEgg") then
+                    local b = Instance.new("BillboardGui", v); b.Name = "GhostEgg"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,100,0,50)
+                    local t = Instance.new("TextLabel", b); t.Size = UDim2.new(1,0,1,0); t.BackgroundTransparency = 1; t.TextColor3 = Color3.fromRGB(255, 105, 180) -- Màu hồng Easter
+                    t.Text = "🥚 EGG HERE!"
+                end
+            end
+        end
+    end
+end)
+
+function SecureHop()
+    local Servers = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data
+    local s = Servers[math.random(1, #Servers)]
+    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+end
+
+Rayfield:Notify({Title = "GHOST- 666", Content = "Sẵn sàng săn Trứng Phục Sinh!", Duration = 5})
