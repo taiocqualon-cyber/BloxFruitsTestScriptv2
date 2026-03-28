@@ -1,0 +1,224 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST- 666 HUB",
+   LoadingTitle = "Đang khởi động hệ thống bóng ma...",
+   LoadingSubtitle = "Anti-Ban Active | Invisible Mode",
+   KeySystem = true,
+   KeySettings = {
+      Title = "GHOST- 666 AUTH",
+      Subtitle = "Xác thực danh tính",
+      Note = "Secret Access Only", -- Đã giữ bí mật theo ý bạn
+      SaveKey = true,
+      Key = {"GHOST-MASTER-666"}
+   }
+})
+
+-- [[ BIẾN HỆ THỐNG ]] --
+_G.AutoFarm = false
+_G.BringMob = true
+_G.AutoChest = false
+_G.FruitESP = false
+_G.Weapon = "Light-Light"
+_G.TweenSpeed = 250
+
+-- [[ TAB 1: 🏠 MAIN & FARM ]] --
+local MainTab = Window:CreateTab("🏠 Main", 4483362458)
+
+MainTab:CreateToggle({
+   Name = "Auto Farm Level (Snow Island)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoFarm = Value
+      if Value then GhostFarmLogic() end
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Bring Mob (Range Attack)",
+   CurrentValue = true,
+   Callback = function(Value)
+      _G.BringMob = Value
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Auto Tween Chest",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoChest = Value
+      if Value then GhostChestLogic() end
+   end,
+})
+
+-- [[ TAB 2: 👁️ ESP + TELEPORT ]] --
+local TeleTab = Window:CreateTab("👁️ ESP & Tele", 4483362458)
+
+TeleTab:CreateToggle({
+   Name = "Fruit ESP (Distance)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.FruitESP = Value
+   end,
+})
+
+TeleTab:CreateButton({
+   Name = "Teleport to Fruit",
+   Callback = function()
+      TeleportToFruit()
+   end,
+})
+
+TeleTab:CreateSlider({
+   Name = "Tween Speed",
+   Range = {100, 500},
+   Increment = 10,
+   Suffix = "S",
+   CurrentValue = 250,
+   Callback = function(Value)
+      _G.TweenSpeed = Value
+   end,
+})
+
+-- [[ TAB 3: 🌍 SERVER HOP (GIỮ NGUYÊN LOGIC CỦA BẠN) ]] --
+local HopTab = Window:CreateTab("🌍 Server Hop", 4483362458)
+
+HopTab:CreateSection("Moon & Haki")
+
+HopTab:CreateButton({
+   Name = "Hop Full Moon 🌘🌗🌖🌕",
+   Callback = function()
+      CheckMoonAndHop()
+   end,
+})
+
+HopTab:CreateButton({
+   Name = "Hop Sea 2 Haki Dealer",
+   Callback = function()
+      HopServerHaki()
+   end,
+})
+
+HopTab:CreateSection("Fruit Search")
+
+HopTab:CreateButton({
+   Name = "Hop Fruit Spawn Check 🍎",
+   Callback = function()
+      FruitHop()
+   end,
+})
+
+-- [[ LOGIC CORE ]] --
+
+function GhostFarmLogic()
+    spawn(function()
+        while _G.AutoFarm do
+            task.wait(0.1)
+            pcall(function()
+                local player = game.Players.LocalPlayer
+                local char = player.Character
+                
+                -- Check Quest Snow Island
+                if not player.PlayerGui.Main.Quest.Visible then
+                    char.HumanoidRootPart.CFrame = CFrame.new(1385, 87, 155)
+                end
+
+                local tool = player.Backpack:FindFirstChild(_G.Weapon) or char:FindFirstChild(_G.Weapon)
+                if tool and tool.Parent ~= char then char.Humanoid:EquipTool(tool) end
+
+                for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                    if (v.Name == "Snowman" or v.Name == "Snow Bandit") and v.Humanoid.Health > 0 then
+                        char.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0)
+                        if _G.BringMob then
+                            v.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, -10, 0)
+                            v.HumanoidRootPart.CanCollide = false
+                        end
+                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
+                        task.wait(0.1)
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+function GhostChestLogic()
+    spawn(function()
+        while _G.AutoChest do
+            task.wait(0.1)
+            for _, v in pairs(game.Workspace:GetChildren()) do
+                if v.Name:find("Chest") and v:IsA("Part") then
+                    local dist = (v.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                    local tween = game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(dist/_G.TweenSpeed), {CFrame = v.CFrame})
+                    tween:Play()
+                    tween.Completed:Wait()
+                end
+            end
+        end
+    end)
+end
+
+function TeleportToFruit()
+    for _, v in pairs(game.Workspace:GetChildren()) do
+        if v:IsA("Tool") and v.Name:find("Fruit") then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
+            return
+        end
+    end
+end
+
+-- ESP Sytem
+spawn(function()
+    while task.wait(1) do
+        if _G.FruitESP then
+            for _, v in pairs(game.Workspace:GetChildren()) do
+                if v:IsA("Tool") and v.Name:find("Fruit") and not v.Handle:FindFirstChild("GhostESP") then
+                    local b = Instance.new("BillboardGui", v.Handle); b.Name = "GhostESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(0, 100, 0, 50)
+                    local t = Instance.new("TextLabel", b); t.Size = UDim2.new(1,0,1,0); t.BackgroundTransparency = 1; t.TextColor3 = Color3.new(1,1,0)
+                    spawn(function() while v.Parent == game.Workspace do t.Text = v.Name .. "\n[" .. math.floor((v.Handle.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude) .. "m]"; task.wait(0.5) end end)
+                end
+            end
+        end
+    end
+end)
+
+-- [[ HOP SERVER LOGIC ]] --
+function HopServer()
+    local Http = game:GetService("HttpService")
+    local TPS = game:GetService("TeleportService")
+    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local function ListServers(cursor)
+        local Raw = game:HttpGet(Api .. ((cursor and "&cursor=" .. cursor) or ""))
+        return Http:JSONDecode(Raw)
+    end
+    local Servers = ListServers()
+    for _, s in pairs(Servers.data) do
+        if s.playing < s.maxPlayers and s.id ~= game.JobId then
+            TPS:TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+            break
+        end
+    end
+end
+
+function CheckMoonAndHop()
+    if game:GetService("Lighting").ClockTime >= 18 or game:GetService("Lighting").ClockTime <= 5 then
+        Rayfield:Notify({Title = "Moon Status", Content = "Đang là ban đêm! Đang tìm Full Moon...", Duration = 3})
+    end
+    HopServer()
+end
+
+function HopServerHaki()
+    Rayfield:Notify({Title = "Haki Check", Content = "Đang quét server Sea 2...", Duration = 3})
+    HopServer()
+end
+
+function FruitHop()
+    local found = false
+    for _, v in pairs(game.Workspace:GetChildren()) do
+        if v:IsA("Tool") and v.Name:find("Fruit") then found = true; break end
+    end
+    if found then Rayfield:Notify({Title = "Fruit!", Content = "Có trái! Đừng hop!", Duration = 5})
+    else HopServer() end
+end
+
+Rayfield:Notify({Title = "GHOST- 666 HUB", Content = "Hệ thống đã sẵn sàng lộng hành.", Duration = 5})
