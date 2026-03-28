@@ -1,0 +1,64 @@
+-- [[ GHOST-MASTER-666 ATTACK PATCH ]] --
+-- Fix: No Damage / Cannot Attack / Auto Equip
+
+-- 1. CẤU HÌNH SỬA LỖI (FIX CONFIG)
+_G.Settings_Fix = {
+    Weapon = "Light Fruit",  -- HOẶC thay bằng "Combat" nếu muốn dùng Võ Tân Binh
+    AttackDelay = 0.15,       -- TỐT NHẤT: Tránh bị chặn Dame (0.1 - 0.2)
+    BringDistance = 12        -- Khoảng cách gom quái mượt nhất
+}
+
+-- [[ HÀM BẮT BUỘC TRANG BỊ VŨ KHÍ ]] --
+function SecureEquip()
+    local toolName = _G.Settings_Fix.Weapon
+    local p = game.Players.LocalPlayer
+    
+    -- Kiểm tra Tool có trong Backpack hoặc đã cầm trên tay không
+    local tool = p.Backpack:FindFirstChild(toolName) or p.Character:FindFirstChild(toolName)
+    
+    if tool then
+        -- Nếu đang ở Backpack, trang bị ngay
+        if tool.Parent == p.Backpack then
+            p.Character.Humanoid:EquipTool(tool)
+        end
+    else
+        -- LỖI: Không tìm thấy vũ khí (ví dụ chưa mua Combat)
+        -- SCRIPT SẼ DỪNG LẠI ĐỂ TRÁNH BUG
+        _G.Config.AutoFarm = false
+        warn("LỖI: Không tìm thấy vũ khí '" .. toolName .. "'. Đã dừng AutoFarm.")
+    end
+end
+
+-- [[ LỘT TRÌNH FARM BÓNG MA (GHOST FARMING) ]] --
+spawn(function()
+    while _G.Config.AutoFarm do
+        task.wait(0.1)
+        pcall(function()
+            
+            -- BƯỚC 1: Đảm bảo đã cầm vũ khí trên tay
+            SecureEquip()
+            
+            -- Chỉ tấn công nếu character đang cầm vũ khí
+            if game.Players.LocalPlayer.Character:FindFirstChild(_G.Settings_Fix.Weapon) then
+                
+                -- Tìm quái theo nhiệm vụ Snow Bandit [Lv. 100] trong ảnh
+                for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
+                    if mob.Name == "Snowman" and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                        
+                        -- Gom quái Bring Mob thông minh
+                        mob.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -_G.Settings_Fix.BringDistance)
+                        mob.HumanoidRootPart.CanCollide = false
+                        
+                        -- [[ MÁY CLICK TẤN CÔNG ĐÃ ĐƯỢC FIX ]] --
+                        -- Tăng nhẹ delay để server chấp nhận dame
+                        game:GetService("VirtualUser"):CaptureController()
+                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
+                        
+                        -- BẮT BUỘC PHẢI CÓ: Tránh bị server chặn
+                        task.wait(_G.Settings_Fix.AttackDelay) 
+                    end
+                end
+            end
+        end)
+    end
+end)
