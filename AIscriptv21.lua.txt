@@ -1,0 +1,171 @@
+local Players = game:GetService("Players")
+local PathfindingService = game:GetService("PathfindingService")
+local VirtualUser = game:GetService("VirtualUser")
+
+local player = Players.LocalPlayer
+
+-- CONFIG
+local DIST = 6
+local ATTACK_DELAY = 0.1
+
+-- STATE
+local STATE = "IDLE"
+
+-- ===== LEVEL TABLE =====
+local MobTable = {
+    {level = 1, mob = "Bandit"},
+    {level = 10, mob = "Monkey"},
+    {level = 30, mob = "Pirate"},
+}
+
+-- ===== GET LEVEL =====
+local function getLevel()
+    return player.Data.Level.Value
+end
+
+-- ===== GET MOB =====
+local function getMobName()
+    local lvl = getLevel()
+    local selected = MobTable[1]
+
+    for _, v in pairs(MobTable) do
+        if lvl >= v.level then
+            selected = v
+        end
+    end
+
+    return selected.mob
+end
+
+-- ===== CHARACTER =====
+local function getChar()
+    return player.Character or player.CharacterAdded:Wait()
+end
+
+-- ===== PATHFIND MOVE =====
+local function moveTo(pos)
+    local char = getChar()
+    local hum = char:FindFirstChild("Humanoid")
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hum or not hrp then return end
+
+    local path = PathfindingService:CreatePath()
+    path:ComputeAsync(hrp.Position, pos)
+
+    if path.Status == Enum.PathStatus.Success then
+        for _, waypoint in ipairs(path:GetWaypoints()) do
+            hum:MoveTo(waypoint.Position)
+            hum.MoveToFinished:Wait()
+        end
+    else
+        -- fallback
+        hum:MoveTo(pos)
+    end
+end
+
+-- ===== FILTER MOB =====
+local function isValidMob(mob, name)
+    if mob.Name ~= name then return false end
+    if not mob:FindFirstChild("Humanoid") then return false end
+    if mob.Humanoid.Health <= 0 then return false end
+
+    -- tránh boss
+    if mob.Name:lower():find("boss") then return false end
+
+    return true
+end
+
+-- ===== FIND MOB =====
+local function getNearestMob(name)
+    local char = getChar()
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+
+    local nearest, dist = nil, math.huge
+
+    for _, v in pairs(workspace:GetDescendants()) do
+        if isValidMob(v, name) and v:FindFirstChild("HumanoidRootPart") then
+            local d = (v.HumanoidRootPart.Position - hrp.Position).Magnitude
+            if d < dist then
+                dist = d
+                nearest = v
+            end
+        end
+    end
+
+    return nearest
+end
+
+-- ===== ATTACK =====
+local function attack()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton1(Vector2.new(0,0))
+end
+
+-- ===== ANTI STUCK PRO =====
+local lastPos = nil
+local stuckTick = 0
+
+local function antiStuck(hrp)
+    if not lastPos then
+        lastPos = hrp.Position
+        return
+    end
+
+    if (hrp.Position - lastPos).Magnitude < 1 then
+        stuckTick += 1
+    else
+        stuckTick = 0
+    end
+
+    lastPos = hrp.Position
+
+    if stuckTick > 30 then
+        -- nặng → teleport nhẹ
+        hrp.CFrame = hrp.CFrame + Vector3.new(0,10,0)
+        stuckTick = 0
+    elseif stuckTick > 15 then
+        -- vừa → nhảy
+        hrp.Velocity = Vector3.new(0,50,0)
+    end
+end
+
+-- ===== MAIN LOOP =====
+while true do
+    task.wait(ATTACK_DELAY)
+
+    local char = getChar()
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChild("Humanoid")
+
+    if not hrp or not hum then continue end
+
+    if hum.Health <= 0 then
+        STATE = "IDLE"
+        repeat task.wait() until hum.Health > 0
+    end
+
+    local mobName = getMobName()
+    local mob = getNearestMob(mobName)
+
+    if not mob then
+        STATE = "IDLE"
+        continue
+    end
+
+    local mobPos = mob.HumanoidRootPart.Position
+    local dir = (hrp.Position - mobPos).Unit
+    local targetPos = mobPos + dir * DIST
+
+    if STATE ~= "ATTACK" then
+        STATE = "MOVE"
+        moveTo(targetPos)
+        STATE = "ATTACK"
+    end
+
+    if STATE == "ATTACK" then
+        hrp.CFrame = CFrame.new(hrp.Position, mobPos)
+        attack()
+    end
+
+    antiStuck(hrp)
+end
