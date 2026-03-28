@@ -1,0 +1,64 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST- 666 HUB",
+   LoadingTitle = "Đang giả lập quyền truy cập Root Admin...",
+   KeySystem = true,
+   KeySettings = {
+      Title = "GHOST- 666 AUTH",
+      Key = {"GHOST-MASTER-666"}
+   }
+})
+
+-- [[ TAB: 👑 ADMIN PHANTOM ]] --
+local AdminTab = Window:CreateTab("👑 Admin Phantom", 4483362458)
+
+AdminTab:CreateSection("Thao Túng Chat Hệ Thống (Mọi người đều thấy)")
+
+AdminTab:CreateButton({
+   Name = "📢 [Script hub VN] haha: 10s GAME SẬP 😱",
+   Callback = function()
+      -- Kỹ thuật tàng hình: Dùng khoảng trắng cực dài để xóa tên người gửi
+      local space = string.rep(" ", 75) 
+      local message = "🛡️ [Script hub VN] haha: CÒN 10 GIÂY NỮA GAME SẼ SẬP VÀ RESET DATA TOÀN CẦU! 😱😱😧"
+      
+      local args = {
+          [1] = space .. message,
+          [2] = "All"
+      }
+      game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
+      
+      Rayfield:Notify({Title = "GHOST- 666", Content = "Thông điệp nặc danh đã phát tán!", Duration = 5})
+   end,
+})
+
+AdminTab:CreateButton({
+   Name = "🚨 [SYSTEM]: PHÁT HIỆN HACKER GHOST-MASTER",
+   Callback = function()
+      local space = string.rep(" ", 75)
+      local message = "⚠️ [HỆ THỐNG]: PHÁT HIỆN SỰ CAN THIỆP TỪ GHOST-MASTER-666... ĐANG ĐÓNG TOÀN BỘ SERVER!"
+      game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(space .. message, "All")
+   end,
+})
+
+AdminTab:CreateSection("Sống Ảo (Chỉ bạn thấy - Cực Ngầu)")
+
+AdminTab:CreateButton({
+   Name = "👑 Hiện Huy Hiệu Admin (Local Chat)",
+   Callback = function()
+      -- Tạo huy hiệu Admin cạnh tên bạn trong khung chat (chỉ máy bạn thấy để chụp ảnh)
+      game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
+         Text = "[🛡️ ADMIN] GHOST-MASTER: Đã kích hoạt quyền điều khiển tối cao.",
+         Color = Color3.fromRGB(255, 0, 0),
+         Font = Enum.Font.SourceSansBold,
+         FontSize = Enum.FontSize.Size24
+      })
+   end,
+})
+
+-- [[ TAB: 🐣 EASTER HUNTER (SĂN TRONG HỖN LOẠN) ]] --
+local EventTab = Window:CreateTab("🐣 Easter Hunter", 4483362458)
+EventTab:CreateToggle({Name = "Hiện Trứng (ESP)", CurrentValue = true, Callback = function(V) _G.EggESP = V end})
+EventTab:CreateButton({Name = "Bay tới Trứng (Tween)", Callback = function() TweenTo("Egg") end})
+
+-- [Logic Hop Server và ESP giữ nguyên như bản trước]
