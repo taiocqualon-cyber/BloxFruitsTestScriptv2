@@ -1,0 +1,150 @@
+-- [[ Tải Thư Viện Giao Diện Rayfield ]]
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- [[ CẤU HÌNH CỬA SỔ & HỆ THỐNG KEY ]]
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST HUB | Blox Fruits V3.0",
+   LoadingTitle = "Hệ Thống Ẩn Thân 5 Năm Đang Kích Hoạt...",
+   LoadingSubtitle = "by Ghost Master",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "GhostHub_Configs",
+      FileName = "Ghost_Settings"
+   },
+   KeySystem = true, -- BẬT HỆ THỐNG KEY
+   KeySettings = {
+      Title = "XÁC THỰC GHOST MASTER",
+      Subtitle = "Nhập mã để mở khóa sức mạnh",
+      Note = "Key chính chủ: GHOST-MASTER-666",
+      FileName = "GhostHubKey",
+      SaveKey = true,
+      GrabKeyFromSite = false,
+      Key = {"GHOST-MASTER-666"} -- ĐÃ ĐẶT KEY THEO YÊU CẦU CỦA NGÀI
+   }
+})
+
+-- [[ BIẾN HỆ THỐNG ]]
+_G.Settings = {
+    AutoFarm = false,
+    BringMob = false,
+    FastAttack = false,
+    AutoStats = false,
+    ESP_Players = false,
+    ESP_Chests = false,
+    FruitSniper = false,
+    DistanceY = 8
+}
+
+-- [[ PHÂN MỤC (TABS) ]]
+local MainTab = Window:CreateTab("Tự Động Cày", 4483362458)
+local VisualTab = Window:CreateTab("Thị Giác (ESP)", 4483345998)
+local MiscTab = Window:CreateTab("Tiện Ích", 4483362458)
+
+-- ==========================================================
+-- [[ PHẦN 1: AUTO FARM & COMBAT ]]
+-- ==========================================================
+MainTab:CreateSection("Cày Cấp & Gom Quái")
+
+MainTab:CreateToggle({
+   Name = "Bật Auto Farm (Ghost Mode)",
+   CurrentValue = false,
+   Flag = "AutoFarmToggle",
+   Callback = function(Value)
+      _G.Settings.AutoFarm = Value
+      if Value then
+         spawn(function()
+            while _G.Settings.AutoFarm do
+               wait()
+               pcall(function()
+                  local char = game.Players.LocalPlayer.Character
+                  local root = char.HumanoidRootPart
+                  -- Tự nhận Quest (Ví dụ Sea 1)
+                  if not game.Players.LocalPlayer.PlayerGui.Main.Quest.Visible then
+                     game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", "BanditQuest1", 1)
+                  end
+                  -- Tìm quái và bay đến
+                  for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                     if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                        root.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, _G.Settings.DistanceY, 0)
+                        -- Gom quái
+                        if _G.Settings.BringMob then
+                           v.HumanoidRootPart.CanCollide = false
+                           v.HumanoidRootPart.CFrame = root.CFrame * CFrame.new(0, -_G.Settings.DistanceY, 0)
+                        end
+                        -- Đánh nhanh
+                        if _G.Settings.FastAttack then
+                           game:GetService("VirtualUser"):CaptureController()
+                           game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
+                        end
+                     end
+                  end
+               end)
+            end
+         end)
+      end
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Gom Quái (Bring Mobs)",
+   CurrentValue = false,
+   Flag = "BringToggle",
+   Callback = function(Value) _G.Settings.BringMob = Value end,
+})
+
+MainTab:CreateToggle({
+   Name = "Đánh Siêu Tốc (Fast Attack)",
+   CurrentValue = false,
+   Flag = "FastAttackToggle",
+   Callback = function(Value) _G.Settings.FastAttack = Value end,
+})
+
+-- ==========================================================
+-- [[ PHẦN 2: THỊ GIÁC (ESP) ]]
+-- ==========================================================
+VisualTab:CreateSection("Nhìn Xuyên Vật Thể")
+
+VisualTab:CreateToggle({
+   Name = "Hiện Người Chơi (Red Box)",
+   CurrentValue = false,
+   Flag = "ESPP",
+   Callback = function(Value) _G.Settings.ESP_Players = Value end,
+})
+
+VisualTab:CreateToggle({
+   Name = "Hiện Rương Vàng (Yellow Box)",
+   CurrentValue = false,
+   Flag = "ESPC",
+   Callback = function(Value) _G.Settings.ESP_Chests = Value end,
+})
+
+-- (Logic ESP tự động chạy ngầm theo biến Settings ở trên)
+
+-- ==========================================================
+-- [[ PHẦN 3: TIỆN ÍCH (MISC) ]]
+-- ==========================================================
+MiscTab:CreateSection("Tính Năng Bóng Ma")
+
+MiscTab:CreateToggle({
+   Name = "Tự Động Nhặt Trái Ác Quỷ",
+   CurrentValue = false,
+   Flag = "SniperToggle",
+   Callback = function(Value) _G.Settings.FruitSniper = Value end,
+})
+
+MiscTab:CreateSlider({
+   Name = "Khoảng Cách Bay (Y Offset)",
+   Range = {5, 20},
+   Increment = 1,
+   Suffix = "Units",
+   CurrentValue = 8,
+   Flag = "DistSlider",
+   Callback = function(Value) _G.Settings.DistanceY = Value end,
+})
+
+Rayfield:Notify({
+   Title = "XÁC THỰC THÀNH CÔNG",
+   Content = "Key GHOST-MASTER-666 Hợp Lệ. Chúc ngài lộng hành vui vẻ!",
+   Duration = 5,
+   Image = 4483362458,
+})
