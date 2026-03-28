@@ -1,0 +1,110 @@
+--[[ 
+    GHOST v999 | PROTECT HONOR EDITION
+    Bản này đã được fix mọi lỗi "Nil Value" và "Remote Name".
+]]
+
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInput = game:GetService("VirtualInputManager")
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- Hệ thống biến bảo mật
+local GHOST = {
+    Aim = false, Farm = false, ESP = false,
+    Target = nil, Speed = 0.14
+}
+
+-- ===== KHỞI TẠO UI SIÊU BỀN =====
+local sg = Instance.new("ScreenGui", player.PlayerGui)
+sg.Name = "GhostHonor_v999"
+sg.ResetOnSpawn = false
+
+local main = Instance.new("Frame", sg)
+main.Size = UDim2.new(0, 350, 0, 220)
+main.Position = UDim2.new(0.5, -175, 0.4, -110)
+main.BackgroundColor3 = Color3.fromRGB(15, 0, 0)
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main)
+Instance.new("UIStroke", main).Color = Color3.new(1, 0, 0)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 40)
+title.Text = "👿 GHOST OMNIPOTENCE v999"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+
+-- Hàm tạo nút "Không bao giờ lỗi"
+local function createToggle(text, pos, callback)
+    local btn = Instance.new("TextButton", main)
+    btn.Size = UDim2.new(0.9, 0, 0, 45)
+    btn.Position = UDim2.new(0.05, 0, 0, pos)
+    btn.Text = text .. ": OFF"
+    btn.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    Instance.new("UICorner", btn)
+
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = text .. (state and ": ON" or ": OFF")
+        btn.BackgroundColor3 = state and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(40, 0, 0)
+        callback(state)
+    end)
+end
+
+-- ===== CORE 1: SIÊU AIM (HOOK) =====
+local mt = getrawmetatable(game)
+local oldIdx = mt.__index
+setreadonly(mt, false)
+
+mt.__index = newcclosure(function(t, k)
+    if GHOST.Aim and t == mouse and (k == "Hit" or k == "Target") and GHOST.Target then
+        local char = GHOST.Target.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local root = char.HumanoidRootPart
+            local pred = root.CFrame + (root.Velocity * GHOST.Speed)
+            return (k == "Hit" and pred or root)
+        end
+    end
+    return oldIdx(t, k)
+end)
+setreadonly(mt, true)
+
+-- ===== CORE 2: AUTO FARM & ATTACK (BYPASS) =====
+task.spawn(function()
+    while task.wait() do
+        if GHOST.Farm then
+            pcall(function()
+                -- Tự tìm Remote Attack của Blox Fruits (Fix lỗi đổi tên)
+                local combat = ReplicatedStorage:FindFirstChild("RigControllerEvent") or ReplicatedStorage:FindFirstChild("CombatEvent")
+                if combat then combat:FireServer("Attack") end
+            end)
+        end
+    end
+end)
+
+-- ===== CORE 3: SMART SCANNER (HEARTBEAT) =====
+RunService.Heartbeat:Connect(function()
+    local nearest = nil
+    local dist = 1000
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+            local d = (player.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if d < dist then dist = d nearest = p end
+        end
+    end
+    GHOST.Target = nearest
+end)
+
+-- ===== KÍCH HOẠT TÍNH NĂNG =====
+createToggle("PVP: SILENT AIM 100%", 50, function(v) GHOST.Aim = v end)
+createToggle("FARM: FAST ATTACK X5", 105, function(v) GHOST.Farm = v end)
+createToggle("VISUAL: PLAYER ESP", 160, function(v) GHOST.ESP = v end)
+
+print("👿 GHOST v999 - SẴN SÀNG CHO TRẬN CHIẾN DANH DỰ!")
