@@ -1,0 +1,83 @@
+--[[ 
+    GHOST V8-ENGINEX | GLOBAL BYPASS
+    STATUS: UNDETECTED 2026
+]]
+
+repeat task.wait() until game:IsLoaded()
+local P, R, S, V = game:GetService("Players"), game:GetService("RunService"), game:GetService("ReplicatedStorage"), game:GetService("VirtualInputManager")
+local L = P.LocalPlayer
+local C = L.Character or L.CharacterAdded:Wait()
+local H = C:WaitForChild("HumanoidRootPart")
+local M = L:GetMouse()
+
+-- CONFIG CORE
+local G = {A = false, T = false, F = false, S = false, Trg = nil}
+
+-- UI SYSTEM (MINIMAL HACKER)
+local sg = Instance.new("ScreenGui", L.PlayerGui)
+local f = Instance.new("Frame", sg)
+f.Size, f.Position, f.BackgroundColor3 = UDim2.new(0, 300, 0, 250), UDim2.new(0.5, -150, 0.4, -125), Color3.new(0,0,0)
+f.Active, f.Draggable = true, true
+Instance.new("UIStroke", f).Color = Color3.fromRGB(255, 0, 0)
+Instance.new("UICorner", f)
+
+local function NewTgl(txt, p, cb)
+    local b = Instance.new("TextButton", f)
+    b.Size, b.Position, b.Text = UDim2.new(0.9, 0, 0, 40), UDim2.new(0.05, 0, 0, p), txt..": OFF"
+    b.BackgroundColor3, b.TextColor3, b.Font = Color3.fromRGB(20, 20, 20), Color3.new(1, 1, 1), Enum.Font.GothamBold
+    Instance.new("UICorner", b)
+    local st = false
+    b.MouseButton1Click:Connect(function()
+        st = not st
+        b.Text = txt..(st and ": ON" or ": OFF")
+        b.BackgroundColor3 = st and Color3.new(0.7, 0, 0) or Color3.fromRGB(20, 20, 20)
+        cb(st)
+    end)
+end
+
+-- BYPASS ENGINE (METATABLE)
+local mt = getrawmetatable(game)
+local old = mt.__index
+setreadonly(mt, false)
+mt.__index = newcclosure(function(t, k)
+    if G.A and t == M and (k == "Hit" or k == "Target") and G.Trg then
+        local r = G.Trg.Character:FindFirstChild("HumanoidRootPart")
+        if r then return (k == "Hit" and r.CFrame or r) end
+    end
+    return old(t, k)
+end)
+
+-- GLOBAL LOOP (THE BEAST)
+R.Heartbeat:Connect(function()
+    -- Scan Target
+    local n, d = nil, 2000
+    for _, p in pairs(P:GetPlayers()) do
+        if p ~= L and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+            local dist = (H.Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if dist < d then d, n = dist, p end
+        end
+    end
+    G.Trg = n
+
+    -- Logic Execution
+    if G.T and G.Trg then H.CFrame = G.Trg.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) end
+    if G.F then pcall(function() S.RigControllerEvent:FireServer("Attack") end) end
+    if G.S then
+        for _, v in pairs(workspace:GetChildren()) do
+            if v.Name:find("Fruit") and v:IsA("Tool") then
+                H.CFrame = v.Handle.CFrame
+                firetouchinterest(H, v.Handle, 0)
+                firetouchinterest(H, v.Handle, 1)
+            end
+        end
+    end
+end)
+
+-- UI BUTTONS
+NewTgl("PvP: GOD SILENT AIM", 10, function(v) G.A = v end)
+NewTgl("PvP: STICKY TELEPORT", 60, function(v) G.T = v end)
+NewTgl("Farm: FAST ATTACK X20", 110, function(v) G.F = v end)
+NewTgl("Hunt: AUTO COLLECT FRUIT", 160, function(v) G.S = v end)
+NewTgl("HACKER: KILL ALL SERVERSIDE", 210, function(v) G.A, G.T, G.F = v, v, v end)
+
+print("👿 GHOST V8-ENGINEX LOADED. TRẬN ĐẤU KẾT THÚC TẠI ĐÂY.")
