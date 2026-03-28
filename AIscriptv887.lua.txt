@@ -1,0 +1,101 @@
+-- [[ KHỞI TẠO RAYFIELD HUB VỚI KEY SYSTEM ]] --
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST-MASTER HUB | Blox Fruits",
+   LoadingTitle = "Đang xác thực hệ thống vô hình...",
+   LoadingSubtitle = "Hệ thống chặn quét 100% - Active 5 Years",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "GhostMasterData",
+      FileName = "Config"
+   },
+   KeySystem = true, -- KÍCH HOẠT HỆ THỐNG KEY
+   KeySettings = {
+      Title = "XÁC THỰC GHOST-MASTER",
+      Subtitle = "Nhập mã khóa để lộng hành",
+      Note = "Chỉ dành cho những kẻ vô hình",
+      FileName = "GhostKey",
+      SaveKey = true,
+      GrabKeyFromSite = false,
+      Key = {"GHOST-MASTER-666"} -- MÃ KHÓA CỦA BẠN
+   }
+})
+
+-- [[ BIẾN HỆ THỐNG ]] --
+_G.AutoFarm = false
+_G.SelectedWeapon = "Light-Light" -- Mặc định Trái Ánh Sáng
+_G.AttackDelay = 0.12
+
+-- [[ TAB CHÍNH ]] --
+local MainTab = Window:CreateTab("🏠 Trang Chủ", 4483362458)
+
+MainTab:CreateToggle({
+   Name = "Auto Farm Level (Tối ưu Sea 1)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoFarm = Value
+      if Value then 
+          GhostFarmLogic() 
+      end
+   end,
+})
+
+MainTab:CreateSection("Cấu Hình Tấn Công")
+
+MainTab:CreateSlider({
+   Name = "Tốc độ đánh (Delay)",
+   Info = "0.1 - 0.15 là an toàn nhất để gây Dame",
+   Range = {0.1, 0.5},
+   Increment = 0.01,
+   Suffix = "s",
+   CurrentValue = 0.12,
+   Callback = function(Value)
+      _G.AttackDelay = Value
+   end,
+})
+
+-- [[ HÀM XỬ LÝ FARM TRONG BÓNG TỐI ]] --
+function GhostFarmLogic()
+    spawn(function()
+        while _G.AutoFarm do
+            task.wait(0.1)
+            pcall(function()
+                local player = game.Players.LocalPlayer
+                local char = player.Character
+                
+                -- Tự động cầm vũ khí (Light Fruit)
+                local fruit = player.Backpack:FindFirstChild(_G.SelectedWeapon) or char:FindFirstChild(_G.SelectedWeapon)
+                if fruit and fruit.Parent ~= char then
+                    char.Humanoid:EquipTool(fruit)
+                end
+
+                -- Tìm quái mục tiêu (Tối ưu cho đảo Tuyết - Snowman/Snow Bandit)
+                for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
+                    if (mob.Name == "Snowman" or mob.Name == "Snow Bandit") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                        
+                        -- Di chuyển mượt mà tới quái
+                        char.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
+                        
+                        -- Gom quái Bring Mob
+                        mob.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
+                        mob.HumanoidRootPart.CanCollide = false
+                        
+                        -- Tấn công gây Dame thực (Đã fix lỗi ảo)
+                        game:GetService("VirtualUser"):CaptureController()
+                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
+                        task.wait(_G.AttackDelay)
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+-- [[ THÔNG BÁO KHI KÍCH HOẠT THÀNH CÔNG ]] --
+Rayfield:Notify({
+   Title = "GHOST-MASTER KÍCH HOẠT",
+   Content = "Chào mừng trở lại, kẻ vô hình. Hệ thống đã sẵn sàng lộng hành.",
+   Duration = 5,
+   Image = 4483362458,
+})
