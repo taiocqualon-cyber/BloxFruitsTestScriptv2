@@ -1,0 +1,53 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST- 666 HUB",
+   LoadingTitle = "Đang kích hoạt Giao diện Thao túng Thế giới...",
+   KeySystem = true,
+   KeySettings = {
+      Title = "GHOST- 666 AUTH",
+      Key = {"GHOST-MASTER-666"}
+   }
+})
+
+-- [[ TAB: 💀 WORLD DOMINATOR ]] --
+local DomTab = Window:CreateTab("💀 Dominator", 4483362458)
+
+DomTab:CreateSection("Gây Hoảng Loạn Toàn Server (Bảo đảm Ngạc Nhiên)")
+
+DomTab:CreateButton({
+   Name = "🌑 Bầu Trời Tối Tăm (Né Admin Quét)",
+   Callback = function()
+      _G.DayTime = false
+      spawn(function()
+         while not _G.DayTime do
+            game:GetService("Lighting").ClockTime = 0
+            game:GetService("Lighting").Ambient = Color3.new(1, 1, 1) -- Làm cho thế giới trắng xóa, ma mị
+            task.wait(0.1)
+         end
+      end)
+      Rayfield:Notify({Title = "GHOST- 666", Content = "Đã chuyển server sang chế độ bóng tối!", Duration = 5})
+   end,
+})
+
+DomTab:CreateButton({
+   Name = "🚨 Chế Độ "Game Sập" (Tối Mịt & Rung Màn Hình)",
+   Callback = function()
+      _G.ApocalypseMode = true
+      spawn(function()
+         while _G.ApocalypseMode do
+            game:GetService("Lighting").ClockTime = math.random(0, 24)
+            game:GetService("Lighting").Ambient = Color3.new(math.random(), 0, 0)
+            -- Thêm hiệu ứng rung màn hình để tăng độ chân thực
+            game:GetService("Players").LocalPlayer.Camera.CFrame = game:GetService("Players").LocalPlayer.Camera.CFrame * CFrame.new(math.random(-1, 1)/2, math.random(-1, 1)/2, math.random(-1, 1)/2)
+            task.wait(0.05)
+         end
+      end)
+      Rayfield:Notify({Title = "GHOST- 666", Content = "Đang kích hoạt chế độ Tận thế...", Duration = 5})
+   end,
+})
+
+-- [[ TAB: 🐣 EASTER HUNTER (VẪN CỰC MẠNH) ]] --
+local EventTab = Window:CreateTab("🐣 Easter Hunter", 4483362458)
+EventTab:CreateToggle({Name = "Hiện Trứng (ESP)", CurrentValue = true, Callback = function(V) _G.EggESP = V end})
+EventTab:CreateButton({Name = "Bay tới Trứng (Tween)", Callback = function() TweenTo("Egg") end})
