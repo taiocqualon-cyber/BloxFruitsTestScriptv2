@@ -1,0 +1,79 @@
+--[[ 
+    GHOST v8000-REFINED | THE CLEAN KING
+    - MỤC TIÊU: Giữ nguyên sự ổn định của v8000, xóa bỏ mọi rườm rà.
+    - CƠ CHẾ: CFrame Sync + VirtualUser Click + Quest Level Mapping.
+    - ƯU ĐIỂM: Nhẹ, không văng, EXP nhảy đều.
+]]
+
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+local L = game:GetService("Players").LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+local VU = game:GetService("VirtualUser")
+
+local G = { Farm = false, Last = 0 }
+
+-- LOGIC LEVEL CHUẨN (Thứ làm nên thương hiệu v8000)
+local function GetQuest()
+    local lv = L.Data.Level.Value
+    if lv < 10 then return "BanditQuest1", "Bandit", "Bandit Quest Giver"
+    elseif lv < 15 then return "MonkeyQuest1", "Monkey", "Monkey Quest Giver"
+    elseif lv < 30 then return "GorillaQuest1", "Gorilla", "Monkey Quest Giver"
+    elseif lv < 40 then return "PirateQuest1", "Pirate", "Pirate Quest Giver"
+    end
+    return "BanditQuest1", "Bandit", "Bandit Quest Giver"
+end
+
+-- COMBAT GỌN GÀNG (Không BodyVelocity rườm rà, chỉ bám tọa độ)
+local function CleanAttack(target)
+    pcall(function()
+        local tool = L.Character:FindFirstChildOfClass("Tool") or L.Backpack:FindFirstChildOfClass("Tool")
+        if tool then L.Character.Humanoid:EquipTool(tool) end
+
+        -- Đứng trên đầu 6 studs (Vị trí an toàn nhất của v8000)
+        L.Character.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 6, 0)
+
+        if tick() - G.Last > 0.16 then
+            VU:CaptureController()
+            VU:ClickButton1(Vector2.new(0,0))
+            RS.Remotes.CommF_:InvokeServer("Attack") -- Remote duy nhất cần thiết
+            G.Last = tick()
+        end
+    end)
+end
+
+-- UI ĐƠN GIẢN
+local sg = Instance.new("ScreenGui", L.PlayerGui)
+local btn = Instance.new("TextButton", sg)
+btn.Size, btn.Position, btn.Text = UDim2.new(0, 45, 0, 45), UDim2.new(0, 10, 0, 150), "👿"
+btn.BackgroundColor3, btn.TextColor3 = Color3.new(0,0,0), Color3.new(1,0,0)
+Instance.new("UICorner", btn).CornerRadius = UDim.new(1,0)
+
+btn.MouseButton1Click:Connect(function()
+    G.Farm = not G.Farm
+    btn.Text = G.Farm and "🔥" or "👿"
+end)
+
+-- VÒNG LẶP CORE
+game:GetService("RunService").Stepped:Connect(function()
+    if G.Farm then
+        if not L.PlayerGui.Main.Quest.Visible then
+            local q, mob, npcName = GetQuest()
+            local npc = workspace.NPCs:FindFirstChild(npcName)
+            if npc then 
+                L.Character.HumanoidRootPart.CFrame = npc.HumanoidRootPart.CFrame
+                RS.Remotes.CommF_:InvokeServer("StartQuest", q, 1)
+            end
+        else
+            local _, mobName, _ = GetQuest()
+            for _, v in pairs(workspace.Enemies:GetChildren()) do
+                if v.Name:find(mobName) and v.Humanoid.Health > 0 then
+                    CleanAttack(v)
+                    break
+                end
+            end
+        end
+    end
+end)
+
+print("👿 GHOST v8000-REFINED: SỰ TRỞ LẠI CỦA NHÀ VUA.")
