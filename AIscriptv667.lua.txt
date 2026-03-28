@@ -1,0 +1,111 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST HUB | Blox Fruits V3.1",
+   LoadingTitle = "Đang hiệu chỉnh Hệ thống Bóng Ma...",
+   LoadingSubtitle = "by Ghost Master",
+   KeySystem = true,
+   KeySettings = {
+      Title = "XÁC THỰC CHỦ SỞ HỮU",
+      Note = "Key duy nhất: GHOST-MASTER-666",
+      Key = {"GHOST-MASTER-666"}
+   }
+})
+
+-- [[ BIẾN HỆ THỐNG ]]
+_G.Settings = {
+    AutoFarm = false,
+    BringMob = true,
+    FastAttack = true,
+    DistanceY = 7,
+    Weapon = "Melee" -- Có thể đổi thành "Sword" hoặc "Fruit"
+}
+
+-- [[ HÀM NHẬN NHIỆM VỤ THEO LEVEL (FIX LEVEL 117) ]]
+function getOptimalQuest()
+    local lvl = game.Players.LocalPlayer.Data.Level.Value
+    if lvl >= 1 and lvl < 15 then return {"BanditQuest1", "Bandit", 1}
+    elseif lvl >= 15 and lvl < 30 then return {"MonkeyQuest1", "Monkey", 1}
+    elseif lvl >= 105 and lvl < 120 then return {"SnowQuest", "Snowman", 1} -- Quái cấp độ 105-120
+    elseif lvl >= 120 and lvl < 150 then return {"SnowQuest", "Yeti", 2}
+    -- Ngài có thể thêm tiếp các mốc Level khác tại đây
+    else return {"BanditQuest1", "Bandit", 1} end
+end
+
+-- [[ HÀM TỰ ĐỘNG CẦM VŨ KHÍ (FIX DAMAGE) ]]
+function equipWeapon()
+    local p = game.Players.LocalPlayer
+    for _, v in pairs(p.Backpack:GetChildren()) do
+        if v:IsA("Tool") and (v.ToolTip == _G.Settings.Weapon or _G.Settings.Weapon == "Melee") then
+            p.Character.Humanoid:EquipTool(v)
+        end
+    end
+end
+
+-- [[ TAB CHÍNH ]]
+local MainTab = Window:CreateTab("Auto Farm", 4483362458)
+
+MainTab:CreateToggle({
+   Name = "Bật Auto Farm (Sửa lỗi Level & Damage)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.Settings.AutoFarm = Value
+      spawn(function()
+         while _G.Settings.AutoFarm do
+            wait(0.1)
+            pcall(function()
+               local questInfo = getOptimalQuest()
+               local player = game.Players.LocalPlayer
+               
+               -- 1. Nhận Nhiệm Vụ
+               if not player.PlayerGui.Main.Quest.Visible then
+                  game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", questInfo[1], questInfo[3])
+               end
+               
+               -- 2. Tìm Quái
+               for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                  if v.Name == questInfo[2] and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                     equipWeapon() -- Cầm vũ khí mới đánh được
+                     
+                     -- Bay đến quái
+                     player.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, _G.Settings.DistanceY, 0)
+                     
+                     -- Gây sát thương (Fix Damage)
+                     if _G.Settings.FastAttack then
+                        game:GetService("VirtualUser"):CaptureController()
+                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
+                        -- Gọi Remote đánh của game
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Attack")
+                     end
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+-- [[ PHẦN ESP (FIX LỖI) ]]
+local VisualTab = Window:CreateTab("Thị Giác (ESP)", 4483345998)
+
+VisualTab:CreateToggle({
+   Name = "Bật ESP Người Chơi (Siêu mượt)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.ESP = Value
+      while _G.ESP do
+         wait(1)
+         for _, p in pairs(game.Players:GetPlayers()) do
+            if p ~= game.Players.LocalPlayer and p.Character then
+               if not p.Character:FindFirstChild("Highlight") then
+                  local hi = Instance.new("Highlight", p.Character)
+                  hi.FillColor = Color3.fromRGB(255, 0, 0)
+                  hi.OutlineColor = Color3.fromRGB(255, 255, 255)
+               end
+            end
+         end
+      end
+   end,
+})
+
+Rayfield:Notify({Title = "GHOST HUB", Content = "Đã sửa lỗi Level và Damage thành công!", Duration = 5})
