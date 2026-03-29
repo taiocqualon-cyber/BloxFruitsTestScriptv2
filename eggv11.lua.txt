@@ -1,0 +1,83 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST VISION ESP V600",
+   LoadingTitle = "Đang kích hoạt Mắt Thần định vị Trứng...",
+   ConfigurationSaving = {Enabled = false}
+})
+
+_G.ESP_Enabled = false
+
+-- [[ HÀM QUÉT HÌNH DẠNG TRỨNG - KHÔNG QUAN TÂM TÊN ]] --
+function GetEveryEgg()
+    local found = {}
+    for _, v in pairs(game.Workspace:GetDescendants()) do
+        -- Trứng luôn là MeshPart hoặc Part có SpecialMesh
+        if v:IsA("MeshPart") or v:IsA("Part") then
+            -- Lọc theo kích thước thực tế của trứng trong ảnh bạn gửi
+            local s = v.Size
+            if (s.X > 1 and s.X < 8) and v:FindFirstChild("TouchInterest") then
+                -- Quét thêm ID hình dáng để chắc chắn là Trứng (Egg Mesh)
+                table.insert(found, v)
+            end
+        end
+    end
+    return found
+end
+
+local Tab = Window:CreateTab("📡 Định Vị Trứng", 4483362458)
+
+Tab:CreateToggle({
+   Name = "KÍCH HOẠT ESP TRỨNG (NHÌN XUYÊN TƯỜNG)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.ESP_Enabled = Value
+      if not Value then
+          -- Xóa ESP khi tắt
+          for _, v in pairs(game.Workspace:GetDescendants()) do
+              if v:FindFirstChild("EggV600") then v.EggV600:Destroy() end
+          end
+      end
+   end,
+})
+
+-- [[ VÒNG LẶP QUÉT VÀ VẼ ESP ]] --
+spawn(function()
+    while task.wait(1.5) do
+        if _G.ESP_Enabled then
+            local eggs = GetEveryEgg()
+            for _, e in pairs(eggs) do
+                if not e:FindFirstChild("EggV600") then
+                    -- Tạo khung Highlight (Phát sáng quanh trứng)
+                    local box = Instance.new("Highlight", e)
+                    box.Name = "EggV600"
+                    box.FillColor = Color3.fromRGB(255, 0, 0) -- Màu đỏ rực
+                    box.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    box.FillAlpha = 0.5
+                    
+                    -- Tạo bảng tên và khoảng cách
+                    local b = Instance.new("BillboardGui", e)
+                    b.Name = "EggText"
+                    b.AlwaysOnTop = true
+                    b.Size = UDim2.new(0, 150, 0, 50)
+                    b.StudsOffset = Vector3.new(0, 3, 0)
+                    
+                    local t = Instance.new("TextLabel", b)
+                    t.Size = UDim2.new(1, 0, 1, 0)
+                    t.BackgroundTransparency = 1
+                    t.TextScaled = true
+                    t.Font = Enum.Font.SpecialElite
+                    t.TextColor3 = Color3.fromRGB(255, 255, 0)
+                    
+                    -- Cập nhật khoảng cách liên tục
+                    spawn(function()
+                        while e and e.Parent and _G.ESP_Enabled do
+                            local dist = (e.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                            t.Text = "🥚 EGG [" .. math.floor(dist) .. "m]"
+                            task.wait(0.5)
+                        end
+                    end)
+                end
+            end
+        end
+    end
+end)
