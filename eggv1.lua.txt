@@ -1,0 +1,107 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "🐣 GHOST- 666 EGG HUNTER",
+   LoadingTitle = "Đang tối ưu hóa radar săn Trứng VIP...",
+   LoadingSubtitle = "Easter Event 2026 - Speed Mode",
+   KeySystem = true,
+   KeySettings = {
+      Title = "GHOST- 666 AUTH",
+      Key = {"GHOST-MASTER-666"}
+   }
+})
+
+-- [[ BIẾN CẤU HÌNH ]] --
+_G.AutoCollect = false
+_G.EggESP = true
+_G.TweenSpeed = 380 -- Tốc độ cao để cướp trứng nhanh
+
+-- [[ HÀM NHẢY SERVER VẮNG (1-3 NGƯỜI) ]] --
+function HopSmallServer()
+    Rayfield:Notify({Title = "Hệ thống", Content = "Đang tìm server vắng người (1-3 người)...", Duration = 3})
+    local Http = game:GetService("HttpService")
+    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    
+    local success, result = pcall(function()
+        local Raw = game:HttpGet(Api)
+        local Servers = Http:JSONDecode(Raw).data
+        for _, s in pairs(Servers) do
+            if s.playing >= 1 and s.playing <= 3 and s.id ~= game.JobId then
+                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+                return
+            end
+        end
+    end)
+    
+    if not success then 
+        Rayfield:Notify({Title = "Lỗi", Content = "Không tìm thấy server vắng, đang thử lại...", Duration = 2})
+        task.wait(1)
+        HopSmallServer()
+    end
+end
+
+-- [[ TAB 1: 🥚 ULTRA EGG HUNTER ]] --
+local HunterTab = Window:CreateTab("🥚 Egg Hunter", 4483362458)
+
+HunterTab:CreateToggle({
+   Name = "Hiện Trứng & Trứng VIP (ESP)",
+   CurrentValue = true,
+   Callback = function(Value) _G.EggESP = Value end,
+})
+
+HunterTab:CreateButton({
+   Name = "🚀 Bay tới Trứng gần nhất (Tween)",
+   Callback = function()
+      local target = nil
+      local dist = math.huge
+      for _, v in pairs(game.Workspace:GetChildren()) do
+          if (v.Name:find("Egg") or v.Name:find("Easter")) and v:IsA("BasePart") then
+              local d = (v.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+              if d < dist then dist = d; target = v end
+          end
+      end
+      if target then
+          game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(dist/_G.TweenSpeed), {CFrame = target.CFrame}):Play()
+      else
+          Rayfield:Notify({Title = "Thông báo", Content = "Server này đã hết Trứng!", Duration = 2})
+      end
+   end,
+})
+
+HunterTab:CreateButton({
+   Name = "🌍 Nhảy Server Vắng (1-3 người)",
+   Callback = function() HopSmallServer() end,
+})
+
+-- [[ TAB 2: 👁️ VISUALS ]] --
+local VisualTab = Window:CreateTab("👁️ Visuals", 4483362458)
+VisualTab:CreateSlider({
+   Name = "Tốc độ Tween (Bay)",
+   Min = 100, Max = 500, CurrentValue = 380, Flag = "TSpeed",
+   Callback = function(V) _G.TweenSpeed = V end,
+})
+
+-- [[ LOGIC ESP QUÉT TRỨNG VIP ]] --
+spawn(function()
+    while task.wait(1) do
+        if _G.EggESP then
+            for _, v in pairs(game.Workspace:GetChildren()) do
+                if (v.Name:find("Egg") or v.Name:find("Easter")) and not v:FindFirstChild("EggTag") then
+                    local bg = Instance.new("BillboardGui", v); bg.Name = "EggTag"; bg.AlwaysOnTop = true; bg.Size = UDim2.new(0,120,0,50)
+                    local tl = Instance.new("TextLabel", bg); tl.Size = UDim2.new(1,0,1,0); tl.BackgroundTransparency = 1; tl.TextScaled = true
+                    
+                    -- Phân loại màu sắc Trứng
+                    if v.Name:find("Vip") or v.Name:find("Rare") then
+                        tl.TextColor3 = Color3.fromRGB(255, 215, 0) -- Màu vàng cho trứng VIP
+                        tl.Text = "💎 VIP EGG 💎"
+                    else
+                        tl.TextColor3 = Color3.fromRGB(0, 255, 255) -- Màu xanh cho trứng thường
+                        tl.Text = "🥚 EGG"
+                    end
+                end
+            end
+        end
+    end
+end)
+
+Rayfield:Notify({Title = "GHOST- 666", Content = "Radar săn Trứng đã sẵn sàng!", Duration = 5})
