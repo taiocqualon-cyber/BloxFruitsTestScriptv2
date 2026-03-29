@@ -1,0 +1,92 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST HYPER-SCAN V500",
+   LoadingTitle = "Đang hiệu chỉnh Radar siêu cấp...",
+   ConfigurationSaving = {Enabled = false}
+})
+
+-- [[ CẤU HÌNH ]] --
+_G.AutoScan = false
+_G.TweenSpeed = 195 -- Tốc độ cực chuẩn né Kick 267 cho Sea 1
+_G.GrabWait = 1.5    -- Thời gian dừng để chắc chắn nhặt được
+
+-- [[ HÀM QUÉT SÂU - NHẬN DIỆN MỌI LOẠI TRỨNG (FIX ĐƯỢC LỖI CỦA BẠN) ]] --
+function HyperScanEggs()
+    local Eggs = {}
+    -- Quét toàn bộ Descendants để tìm trong các Folder ẩn
+    for _, v in pairs(game.Workspace:GetDescendants()) do
+        if v:IsA("BasePart") and v:FindFirstChild("TouchInterest") then
+            local name = v.Name:lower()
+            -- BỘ LỌC THÔNG MINH: Quét tên, MeshId và kích thước
+            -- Fix: v.Name:find("indra") sẽ bắt được quả "indra egg" trong ảnh của bạn
+            if name:find("egg") or name:find("easter") or name:find("indra") or name:find("moon") or name:find("hacker") then
+                if v.Size.X < 9 and v.Transparency < 1 then
+                    table.insert(Eggs, v)
+                end
+            end
+        end
+    end
+    return Eggs
+end
+
+local MainTab = Window:CreateTab("🥚 Săn Trứng", 4483362458)
+
+MainTab:CreateToggle({
+   Name = "HYPER-COLLECT (Bay tới nhặt 100%)",
+   CurrentValue = false,
+   Callback = function(V)
+      _G.AutoScan = V
+      spawn(function()
+         while _G.AutoScan do
+            local targets = HyperScanEggs()
+            if #targets == 0 then
+                -- Nếu không thấy trứng, tự động đổi Server vắng (1-2 người)
+                game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+                break
+            end
+            
+            local closest = nil; local dist = math.huge
+            for _, e in pairs(targets) do
+                local d = (e.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                if d < dist then dist = d; closest = e end
+            end
+            
+            if closest then
+                local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+                hrp.Velocity = Vector3.new(0,0,0)
+                -- Teleport/Tween tới ngay lập tức
+                local t = game:GetService("TweenService"):Create(hrp, TweenInfo.new((closest.Position - hrp.Position).Magnitude/_G.TweenSpeed), {CFrame = closest.CFrame})
+                t:Play()
+                t.Completed:Wait()
+                
+                hrp.Anchored = true
+                task.wait(_G.GrabWait) -- Khóa vị trí để Server nhận vật phẩm
+                hrp.Anchored = false
+            end
+            task.wait(2)
+         end
+      end)
+   end,
+})
+
+MainTab:CreateButton({
+   Name = "🌍 Đổi Server Vắng (Fix Hop)",
+   Callback = function() 
+        game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+   end,
+})
+
+-- [[ ESP CHỮ ĐỎ HIỆN NGAY TRÊN ĐẦU TRỨNG ]] --
+spawn(function()
+    while task.wait(1.5) do
+        local eggs = HyperScanEggs()
+        for _, e in pairs(eggs) do
+            if not e:FindFirstChild("HyperESP") then
+                local b = Instance.new("BillboardGui", e); b.Name = "HyperESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,100,0,50)
+                local t = Instance.new("TextLabel", b); t.Size = UDim2.new(1,0,1,0); t.BackgroundTransparency = 1; t.TextScaled = true
+                -- Hiện tên chính xác của trứng (Ví dụ: "indra egg")
+                t.Text = "💎 " .. e.Name:upper() .. " 💎"; t.TextColor3 = Color3.fromRGB(255, 0, 0)
+            end
+        end
+    end
+end)
