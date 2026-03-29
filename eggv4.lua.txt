@@ -1,0 +1,104 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST- 666 | SUPREMACY V30",
+   LoadingTitle = "Đang tối ưu hóa hệ thống săn Trứng VIP...",
+   ConfigurationSaving = {Enabled = false}
+})
+
+-- [[ CẤU HÌNH SIÊU CẤP ]] --
+_G.AutoCollect = false
+_G.TweenSpeed = 210 -- Tốc độ an toàn tuyệt đối để né Kick 267
+_G.WaitSync = 1.5    -- Thời gian dừng để Server chấp nhận vị trí
+_G.Blacklist = {"Skull", "Head", "Island", "Mountain"} -- Bỏ qua vật thể lớn
+
+-- [[ HÀM NHẢY SERVER 1-2 NGƯỜI ]] --
+function FinalHop()
+    local Http = game:GetService("HttpService")
+    local TPS = game:GetService("TeleportService")
+    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    
+    pcall(function()
+        local Servers = Http:JSONDecode(game:HttpGet(Api)).data
+        for i = 1, #Servers do
+            local s = Servers[i]
+            if s.playing >= 1 and s.playing <= 2 and s.id ~= game.JobId then
+                TPS:TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+                return
+            end
+        end
+    end)
+end
+
+-- [[ HÀM LỌC TRỨNG CHUẨN 100% ]] --
+function GetPerfectEggs()
+    local Eggs = {}
+    for _, v in pairs(game.Workspace:GetChildren()) do
+        -- Chỉ lấy Part nhỏ, có tên liên quan đến Egg/Easter và KHÔNG nằm trong Blacklist
+        if v:IsA("BasePart") and (v.Name:lower():find("egg") or v.Name:lower():find("easter")) then
+            local isBlacklisted = false
+            for _, b in pairs(_G.Blacklist) do
+                if v.Name:find(b) then isBlacklisted = true end
+            end
+            
+            -- Lọc kích thước (Trứng thật thường rất nhỏ so với đầu lâu)
+            if not isBlacklisted and v.Size.X < 8 then
+                table.insert(Eggs, v)
+            end
+        end
+    end
+    return Eggs
+end
+
+-- [[ TAB CHÍNH ]] --
+local Tab = Window:CreateTab("🥚 Cày Trứng VIP", 4483362458)
+
+Tab:CreateToggle({
+   Name = "AUTO COLLECT (Anti-Kick 267)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoCollect = Value
+      spawn(function()
+         while _G.AutoCollect do
+            local eggs = GetPerfectEggs()
+            local target = nil; local dist = math.huge
+            for _, e in pairs(eggs) do
+                local d = (e.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                if d < dist then dist = d; target = e end
+            end
+            
+            if target then
+                local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+                hrp.Velocity = Vector3.new(0,0,0)
+                local t = game:GetService("TweenService"):Create(hrp, TweenInfo.new((target.Position - hrp.Position).Magnitude/_G.TweenSpeed), {CFrame = target.CFrame})
+                t:Play()
+                t.Completed:Wait()
+                
+                hrp.Anchored = true
+                firetouchinterest(hrp, target, 0); task.wait(0.1); firetouchinterest(hrp, target, 1)
+                task.wait(_G.WaitSync) -- Dừng lại để đồng bộ
+                hrp.Anchored = false
+            end
+            task.wait(2)
+         end
+      end)
+   end,
+})
+
+Tab:CreateButton({
+   Name = "🌍 Nhảy Server (1-2 Người)",
+   Callback = function() FinalHop() end,
+})
+
+-- [[ ESP RADAR ]] --
+spawn(function()
+    while task.wait(1.5) do
+        local eggs = GetPerfectEggs()
+        for _, e in pairs(eggs) do
+            if not e:FindFirstChild("FinalESP") then
+                local b = Instance.new("BillboardGui", e); b.Name = "FinalESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,80,0,40)
+                local t = Instance.new("TextLabel", b); t.Size = UDim2.new(1,0,1,0); t.BackgroundTransparency = 1; t.TextScaled = true; t.Text = "💎 EGG 💎"; t.TextColor3 = Color3.new(1, 1, 0)
+            end
+        end
+    end
+end)
