@@ -1,0 +1,105 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST ULTIMATE V32",
+   LoadingTitle = "Đang phá mã bảo mật hệ thống...",
+   ConfigurationSaving = {Enabled = false}
+})
+
+-- [[ CẤU HÌNH THỰC CHIẾN ]] --
+_G.AutoCollect = false
+_G.TweenSpeed = 185 -- Tốc độ tàng hình, không bị hệ thống quét
+_G.SyncTime = 2.5   -- Thời gian dừng để Server tin rằng bạn đang ở đó
+
+-- [[ HÀM NHẢY SERVER (FIX LỖI KHÔNG NHẢY) ]] --
+function RealHop()
+    local Http = game:GetService("HttpService")
+    local TPS = game:GetService("TeleportService")
+    -- Lấy ID Server ngẫu nhiên từ danh sách vắng người
+    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    
+    local success, result = pcall(function()
+        local data = Http:JSONDecode(game:HttpGet(Api))
+        for _, s in pairs(data.data) do
+            if s.playing >= 1 and s.playing <= 2 and s.id ~= game.JobId then
+                TPS:TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+                return
+            end
+        end
+    end)
+    
+    if not success then 
+        Rayfield:Notify({Title = "GHOST- 666", Content = "API lag, đang cưỡng chế nhảy...", Duration = 2})
+        TPS:Teleport(game.PlaceId, game.Players.LocalPlayer) -- Nhảy server ngẫu nhiên nếu API lỗi
+    end
+end
+
+-- [[ HÀM TÌM TRỨNG THẬT (BỎ QUA VẬT THỂ GIẢ) ]] --
+function GetEggs()
+    local list = {}
+    -- Quét trực tiếp trong các khu vực Item sự kiện
+    for _, v in pairs(game:GetService("Workspace"):GetDescendants()) do
+        if v:IsA("BasePart") and (v.Name:lower():find("egg") or v.Name:lower():find("easter")) then
+            -- Lọc theo kích thước thực của quả trứng để không bay vào đảo/đầu lâu
+            if v.Size.X < 6 and v.Transparency < 1 then
+                table.insert(list, v)
+            end
+        end
+    end
+    return list
+end
+
+-- [[ TAB ĐIỀU KHIỂN ]] --
+local Tab = Window:CreateTab("🥚 Cày Trứng", 4483362458)
+
+Tab:CreateToggle({
+   Name = "AUTO COLLECT (Tự động hốt hết)",
+   CurrentValue = false,
+   Callback = function(V)
+      _G.AutoCollect = V
+      spawn(function()
+         while _G.AutoCollect do
+            local eggs = GetEggs()
+            local target = nil; local dist = math.huge
+            for _, e in pairs(eggs) do
+                local d = (e.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                if d < dist then dist = d; target = e end
+            end
+            
+            if target then
+                local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+                -- Tắt vận tốc để không bị giật
+                hrp.Velocity = Vector3.new(0,0,0)
+                local t = game:GetService("TweenService"):Create(hrp, TweenInfo.new((target.Position - hrp.Position).Magnitude/_G.TweenSpeed), {CFrame = target.CFrame})
+                t:Play()
+                t.Completed:Wait()
+                
+                -- Cơ chế nhặt: Đứng im để Server đồng bộ, sau đó tự chạm
+                hrp.Anchored = true
+                task.wait(_G.SyncTime)
+                hrp.Anchored = false
+            end
+            task.wait(3) -- Nghỉ giữa các quả để Anti-Cheat không nghi ngờ
+         end
+      end)
+   end,
+})
+
+Tab:CreateButton({
+   Name = "🌍 Nhảy Server Vắng (1-2 Người)",
+   Callback = function() RealHop() end,
+})
+
+-- [[ ESP QUÉT TRỨNG (CHỮ ĐỎ CHỈ THẲNG VÀO TRỨNG) ]] --
+spawn(function()
+    while task.wait(2) do
+        local eggs = GetEggs()
+        for _, e in pairs(eggs) do
+            if not e:FindFirstChild("EggGHOST") then
+                local b = Instance.new("BillboardGui", e); b.Name = "EggGHOST"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,100,0,50)
+                local t = Instance.new("TextLabel", b); t.Size = UDim2.new(1,0,1,0); t.BackgroundTransparency = 1; t.TextScaled = true
+                t.Text = "💎 TRỨNG 💎"; t.TextColor3 = Color3.fromRGB(255, 0, 0)
+            end
+        end
+    end
+end)
