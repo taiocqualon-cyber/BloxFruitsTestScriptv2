@@ -1,0 +1,83 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST PURE ESP V600",
+   LoadingTitle = "Đang nạp hệ thống Radar 24 loại Trứng...",
+   ConfigurationSaving = {Enabled = false}
+})
+
+-- [[ DANH SÁCH QUÉT TỐI THƯỢNG ]] --
+local function GetActualEggs()
+    local found = {}
+    for _, v in pairs(game:GetService("Workspace"):GetDescendants()) do
+        -- Quét dựa trên tên thực tế trong ảnh bạn gửi (indra, rocket, egg, v.v.)
+        if v:IsA("BasePart") or v:IsA("MeshPart") then
+            local name = v.Name:lower()
+            if name:find("egg") or name:find("indra") or name:find("rocket") or name:find("easter") or name:find("moon") then
+                -- Loại trừ các vật thể quá lớn hoặc thuộc về nhân vật
+                if v.Size.X < 15 and not v:IsDescendantOf(game.Players.LocalPlayer.Character) then
+                    table.insert(found, v)
+                end
+            end
+        end
+    end
+    return found
+end
+
+local Tab = Window:CreateTab("📡 Radar Trứng", 4483362458)
+
+Tab:CreateToggle({
+   Name = "BẬT SIÊU ESP (XUYÊN TƯỜNG)",
+   CurrentValue = true,
+   Callback = function(Value)
+      _G.ESPLoop = Value
+      spawn(function()
+         while _G.ESPLoop do
+            local eggs = GetActualEggs()
+            for _, e in pairs(eggs) do
+                if not e:FindFirstChild("GhostRadar") then
+                    -- Tạo khung ESP bao quanh trứng
+                    local b = Instance.new("BillboardGui", e)
+                    b.Name = "GhostRadar"
+                    b.AlwaysOnTop = true
+                    b.Size = UDim2.new(0, 120, 0, 60)
+                    b.Adornee = e
+                    
+                    -- Tên Trứng
+                    local t = Instance.new("TextLabel", b)
+                    t.Size = UDim2.new(1, 0, 0.5, 0)
+                    t.BackgroundTransparency = 1
+                    t.TextScaled = true
+                    t.Text = "⭐ " .. e.Name:upper() .. " ⭐"
+                    t.TextColor3 = Color3.fromRGB(255, 255, 0) -- Màu vàng rực
+                    t.Font = Enum.Font.GothamBold
+
+                    -- Khoảng cách
+                    local d = Instance.new("TextLabel", b)
+                    d.Position = UDim2.new(0, 0, 0.5, 0)
+                    d.Size = UDim2.new(1, 0, 0.5, 0)
+                    d.BackgroundTransparency = 1
+                    d.TextScaled = true
+                    d.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    
+                    spawn(function()
+                        while e and e.Parent and b do
+                            local dist = (e.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                            d.Text = "[" .. math.floor(dist) .. "m]"
+                            task.wait(0.5)
+                        end
+                    end)
+                end
+            end
+            task.wait(2)
+         end
+      end)
+   end,
+})
+
+Tab:CreateButton({
+   Name = "🌍 Nhảy Server (Khi Map hết Trứng)",
+   Callback = function()
+      local TPS = game:GetService("TeleportService")
+      TPS:Teleport(game.PlaceId, game.Players.LocalPlayer)
+   end,
+})
