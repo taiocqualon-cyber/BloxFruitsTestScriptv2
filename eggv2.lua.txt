@@ -1,0 +1,111 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "🐣 GHOST- 666 | EGG HUNTER ULTRA",
+   LoadingTitle = "Đang tối ưu hóa Radar và Bộ lọc Server...",
+   ConfigurationSaving = {Enabled = false}
+})
+
+-- [[ CẤU HÌNH CÀY TRỨNG ]] --
+_G.AutoCollect = false
+_G.EggESP = true
+_G.TweenSpeed = 320 -- Tốc độ di chuyển tối ưu cho Sea 1 & 2
+_G.WaitSync = 0.8    -- Thời gian đứng im để Server nhận vị trí (Fix lỗi giật lại)
+
+-- [[ HÀM NHẢY SERVER SIÊU VẮNG (1-2 NGƯỜI) ]] --
+function FastHop()
+    local Http = game:GetService("HttpService")
+    local TPS = game:GetService("TeleportService")
+    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100"
+    
+    pcall(function()
+        local Servers = Http:JSONDecode(game:HttpGet(Api)).data
+        for i = #Servers, 1, -1 do -- Duyệt ngược để tìm server cũ/ổn định
+            local s = Servers[i]
+            if s.playing >= 1 and s.playing <= 2 and s.id ~= game.JobId then
+                TPS:TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+                return
+            end
+        end
+    end)
+end
+
+-- [[ HÀM TWEEN VÀ NHẶT TRỨNG (CHỐNG LỖI) ]] --
+function SecureCollect(target)
+    local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp and target then
+        local dist = (target.Position - hrp.Position).Magnitude
+        hrp.Velocity = Vector3.new(0,0,0) -- Triệt tiêu lực quán tính
+        
+        local tween = game:GetService("TweenService"):Create(hrp, TweenInfo.new(dist/_G.TweenSpeed, Enum.EasingStyle.Linear), {CFrame = target.CFrame})
+        tween:Play()
+        
+        tween.Completed:Connect(function()
+            hrp.Anchored = true -- Khóa cứng nhân vật để Server không kéo ngược lại
+            -- Ép game nhận diện việc nhặt trứng
+            firetouchinterest(hrp, target, 0)
+            task.wait(0.1)
+            firetouchinterest(hrp, target, 1)
+            
+            task.wait(_G.WaitSync) -- Đợi đồng bộ tọa độ
+            hrp.Anchored = false
+        end)
+    end
+end
+
+-- [[ GIAO DIỆN ĐIỀU KHIỂN ]] --
+local MainTab = Window:CreateTab("🥚 Săn Trứng", 4483362458)
+
+MainTab:CreateToggle({
+   Name = "AUTO COLLECT (Tự động bay đi nhặt sạch)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoCollect = Value
+      spawn(function()
+         while _G.AutoCollect do
+            local closest = nil; local dist = math.huge
+            for _, v in pairs(game.Workspace:GetChildren()) do
+                if (v.Name:lower():find("egg") or v.Name:lower():find("easter")) and v:IsA("BasePart") then
+                    local d = (v.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                    if d < dist then dist = d; closest = v end
+                end
+            end
+            if closest then SecureCollect(closest) end
+            task.wait(2.5) -- Nghỉ giữa các lần bay để an toàn
+         end
+      end)
+   end,
+})
+
+MainTab:CreateButton({
+   Name = "🌍 Nhảy Server (Tìm chỗ 1-2 người)",
+   Callback = function() FastHop() end,
+})
+
+local VisualTab = Window:CreateTab("👁️ Hiển Thị", 4483362458)
+
+VisualTab:CreateToggle({
+   Name = "Bật Radar ESP (Trứng thường/VIP)",
+   CurrentValue = true,
+   Callback = function(V) _G.EggESP = V end,
+})
+
+-- [[ LOGIC ESP QUÉT TRỨNG TỔNG LỰC ]] --
+spawn(function()
+    while task.wait(1.5) do
+        if _G.EggESP then
+            for _, v in pairs(game.Workspace:GetChildren()) do
+                if (v.Name:lower():find("egg") or v.Name:lower():find("easter")) and not v:FindFirstChild("EggESP") then
+                    local bg = Instance.new("BillboardGui", v); bg.Name = "EggESP"; bg.AlwaysOnTop = true; bg.Size = UDim2.new(0,100,0,50)
+                    local tl = Instance.new("TextLabel", bg); tl.Size = UDim2.new(1,0,1,0); tl.BackgroundTransparency = 1; tl.TextScaled = true
+                    
+                    if v.Name:lower():find("vip") or v.Name:lower():find("rare") then
+                        tl.Text = "💎 TRỨNG VIP 💎"; tl.TextColor3 = Color3.new(1, 0.8, 0)
+                    else
+                        tl.Text = "🥚 TRỨNG"; tl.TextColor3 = Color3.new(0, 1, 1)
+                    end
+                end
+            end
+        end
+    end
+end)
