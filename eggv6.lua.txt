@@ -1,0 +1,101 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST TRUE HUNTER V34",
+   LoadingTitle = "Đang cưỡng chế kết nối hệ thống...",
+   ConfigurationSaving = {Enabled = false}
+})
+
+_G.AutoCollect = false
+_G.TweenSpeed = 195
+
+-- [[ HÀM NHẢY SERVER CƯỠNG CHẾ - KHÔNG THỂ BỊ CHẶN ]] --
+function ForceJump()
+    Rayfield:Notify({Title = "GHOST- 666", Content = "Đang cưỡng chế nhảy Server 1-2 người...", Duration = 3})
+    local Http = game:GetService("HttpService")
+    local TPS = game:GetService("TeleportService")
+    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    
+    local success, result = pcall(function()
+        local data = Http:JSONDecode(game:HttpGet(Api))
+        for _, s in pairs(data.data) do
+            -- Tìm đúng server 1-2 người để không bị tranh trứng
+            if s.playing >= 1 and s.playing <= 2 and s.id ~= game.JobId then
+                TPS:TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+                return
+            end
+        end
+    end)
+    
+    -- Nếu API lỗi, dùng cách nhảy ngẫu nhiên để thoát khỏi server hiện tại
+    if not success then
+        TPS:Teleport(game.PlaceId)
+    end
+end
+
+-- [[ HÀM QUÉT TRỨNG SÂU TRONG DATA ]] --
+function ScanAllEggs()
+    local Eggs = {}
+    for _, v in pairs(game:GetDescendants()) do
+        -- Blox Fruits Sea 2 thường đặt Trứng là "SpecialItem" hoặc có MeshId đặc trưng
+        if v:IsA("BasePart") and (v.Name:lower():find("egg") or v.Name:lower():find("easter") or v:FindFirstChild("TouchInterest")) then
+            if v.Size.X < 8 and v.Size.Y < 8 and v.Transparency < 1 then
+                table.insert(Eggs, v)
+            end
+        end
+    end
+    return Eggs
+end
+
+local Tab = Window:CreateTab("🥚 Săn Trứng", 4483362458)
+
+Tab:CreateToggle({
+   Name = "KÍCH HOẠT AUTO COLLECT (FIX)",
+   CurrentValue = false,
+   Callback = function(V)
+      _G.AutoCollect = V
+      spawn(function()
+         while _G.AutoCollect do
+            local targets = ScanAllEggs()
+            local closest = nil; local dist = math.huge
+            for _, e in pairs(targets) do
+                local d = (e.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                if d < dist then dist = d; closest = e end
+            end
+            
+            if closest then
+                local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+                hrp.Velocity = Vector3.new(0,0,0)
+                local t = game:GetService("TweenService"):Create(hrp, TweenInfo.new((closest.Position - hrp.Position).Magnitude/_G.TweenSpeed), {CFrame = closest.CFrame})
+                t:Play()
+                t.Completed:Wait()
+                
+                -- Khóa vị trí 1.5 giây để game kịp nhận vật phẩm
+                hrp.Anchored = true
+                task.wait(1.5)
+                hrp.Anchored = false
+            end
+            task.wait(2)
+         end
+      end)
+   end,
+})
+
+Tab:CreateButton({
+   Name = "🌍 CƯỠNG CHẾ NHẢY SERVER",
+   Callback = function() ForceJump() end,
+})
+
+-- [[ ESP CHỮ ĐỎ HIỆN NGAY LẬP TỨC ]] --
+spawn(function()
+    while task.wait(1.5) do
+        local eggs = ScanAllEggs()
+        for _, e in pairs(eggs) do
+            if not e:FindFirstChild("GhostESP") then
+                local b = Instance.new("BillboardGui", e); b.Name = "GhostESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,100,0,50)
+                local t = Instance.new("TextLabel", b); t.Size = UDim2.new(1,0,1,0); t.BackgroundTransparency = 1; t.TextScaled = true
+                t.Text = "💎 TRỨNG 💎"; t.TextColor3 = Color3.new(1, 0, 0)
+            end
+        end
+    end
+end)
