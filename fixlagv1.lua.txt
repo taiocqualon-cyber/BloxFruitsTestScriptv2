@@ -1,0 +1,56 @@
+-- [[ HỆ THỐNG TỐI ƯU HÓA HÌNH ẢNH ]]
+local function OptimizeGame()
+    local lighting = game:GetService("Lighting")
+    local terrain = game.Workspace:FindFirstChildOfClass("Terrain")
+    
+    -- 1. Xóa bỏ các hiệu ứng môi trường gây lag
+    lighting.GlobalShadows = false
+    lighting.FogEnd = 9e9
+    lighting.Brightness = 1
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+
+    -- 2. Đơn giản hóa Terrain (Địa hình)
+    if terrain then
+        terrain.WaterWaveSize = 0
+        terrain.WaterWaveSpeed = 0
+        terrain.WaterReflectance = 0
+        terrain.WaterTransparency = 0
+    end
+
+    -- 3. Xóa các hiệu ứng Post-Processing
+    for _, v in pairs(lighting:GetChildren()) do
+        if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") then
+            v.Enabled = false
+        end
+    end
+
+    -- 4. "Tẩy não" Texture (Biến mọi thứ thành khối màu đơn giản)
+    for _, v in pairs(game.Workspace:GetDescendants()) do
+        if v:IsA("BasePart") and not v:IsA("MeshPart") then
+            v.Material = Enum.Material.SmoothPlastic
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v.Transparency = 1 -- Làm mờ các chi tiết trang trí không cần thiết
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Enabled = false -- Tắt bụi, khói, và vệt sáng gây lag
+        end
+    end
+
+    -- 5. Tắt đổ bóng cho toàn bộ quái và nhân vật
+    for _, v in pairs(game.Workspace.Enemies:GetDescendants()) do
+        if v:IsA("BasePart") then v.CastShadow = false end
+    end
+end
+
+-- [[ LỆNH KHÓA FPS (GIÚP TREO MÁY CỰC MÁT) ]]
+if setfpscap then setfpscap(60) end -- Khóa ở 60 để ổn định, hoặc 30 nếu máy yếu
+
+-- [[ KÍCH HOẠT ]]
+spawn(function()
+    OptimizeGame()
+    -- Tự động dọn dẹp mỗi 60 giây (Xóa rác bộ nhớ)
+    while wait(60) do
+        collectgarbage("collect")
+    end
+end)
+
+print("--- [GHOST BOOST] ĐÃ KÍCH HOẠT CHẾ ĐỘ SIÊU MƯỢT ---")
