@@ -1,0 +1,117 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST SEA 1 TYCOON V400",
+   LoadingTitle = "Đang quét tọa độ Trứng Sea 1...",
+   ConfigurationSaving = {Enabled = false}
+})
+
+-- [[ THÔNG SỐ SIÊU TỐC ]] --
+_G.AutoQuest = false
+_G.Speed = 190 -- Tốc độ tối ưu cho Sea 1 để né Kick 267
+_G.ActionDelay = 2.2 -- Thời gian dừng để Server kịp nhận nhiệm vụ
+
+-- [[ TỌA ĐỘ NHIỆM VỤ SEA 1 (BẢN CHUẨN) ]] --
+local Sea1_Locations = {
+    ["Water"] = Vector3.new(-1432, 1, 0), -- Vùng biển gần Đảo Khởi Đầu
+    ["Lava"] = Vector3.new(-5245, 12, 8520), -- Magma Village Sea 1
+    ["High"] = Vector3.new(-456, 1200, 560), -- Đỉnh cây Sky (Thả cao)
+}
+
+-- [[ NHẢY SERVER SEA 1 (ƯU TIÊN SERVER VẮNG) ]] --
+function Sea1_Hop()
+    local TPS = game:GetService("TeleportService")
+    local Api = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+    pcall(function()
+        local data = game:GetService("HttpService"):JSONDecode(game:HttpGet(Api))
+        for _, s in pairs(data.data) do
+            if s.playing < 5 and s.id ~= game.JobId then
+                TPS:TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+                return
+            end
+        end
+    end)
+    task.wait(1); TPS:Teleport(game.PlaceId)
+end
+
+-- [[ LOGIC THỰC THI NHIỆM VỤ SEA 1 ]] --
+function DoSea1Task(egg)
+    local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+    local name = egg.Name:lower()
+    
+    -- 1. Tween tới nhặt trứng
+    local t = game:GetService("TweenService"):Create(hrp, TweenInfo.new((egg.Position - hrp.Position).Magnitude/_G.Speed), {CFrame = egg.CFrame})
+    t:Play(); t.Completed:Wait(); task.wait(0.6)
+    
+    -- 2. Xử lý Logic Quest (Thirsty, Molten, Falling...)
+    if name:find("thirsty") then
+        game:GetService("TweenService"):Create(hrp, TweenInfo.new((Sea1_Locations.Water - hrp.Position).Magnitude/_G.Speed), {CFrame = CFrame.new(Sea1_Locations.Water)}):Play()
+        task.wait(_G.ActionDelay)
+    elseif name:find("molten") then
+        game:GetService("TweenService"):Create(hrp, TweenInfo.new((Sea1_Locations.Lava - hrp.Position).Magnitude/_G.Speed), {CFrame = CFrame.new(Sea1_Locations.Lava)}):Play()
+        task.wait(_G.ActionDelay)
+    elseif name:find("falling") then
+        hrp.CFrame = CFrame.new(Sea1_Locations.High)
+        task.wait(0.5); hrp.Anchored = false -- Cho rơi tự do để tính quest
+        task.wait(_G.ActionDelay)
+    end
+end
+
+-- [[ TAB ĐIỀU KHIỂN ]] --
+local Tab = Window:CreateTab("🥚 Cày Sea 1", 4483362458)
+
+Tab:CreateToggle({
+   Name = "AUTO FARM ALL EGGS (SEA 1)",
+   CurrentValue = false,
+   Callback = function(V)
+      _G.AutoQuest = V
+      spawn(function()
+         while _G.AutoQuest do
+            local found = false
+            -- Tìm trứng trước
+            for _, v in pairs(game.Workspace:GetDescendants()) do
+                if v:IsA("BasePart") and (v.Name:lower():find("egg") or v.Name:lower():find("easter")) and v:FindFirstChild("TouchInterest") then
+                    if v.Size.X < 8 then
+                        DoSea1Task(v)
+                        found = true; break
+                    end
+                end
+            end
+            
+            -- Nếu không có trứng, tìm rương (Treasured Egg)
+            if not found then
+                for _, c in pairs(game.Workspace:GetDescendants()) do
+                    if c.Name:find("Chest") then
+                        local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+                        game:GetService("TweenService"):Create(hrp, TweenInfo.new((c.Position - hrp.Position).Magnitude/_G.Speed), {CFrame = c.CFrame}):Play()
+                        task.wait(1.8); found = true; break
+                    end
+                end
+            end
+            
+            -- Hết hàng thì tự động nhảy server ngay
+            if not found then Sea1_Hop(); break end
+            task.wait(1.5)
+         end
+      end)
+   end,
+})
+
+Tab:CreateButton({
+   Name = "🌍 Force Hop (Sea 1)",
+   Callback = function() Sea1_Hop() end,
+})
+
+-- [[ ESP TRACKER TỐI THƯỢNG ]] --
+spawn(function()
+    while task.wait(2) do
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v:IsA("BasePart") and (v.Name:lower():find("egg") or v.Name:lower():find("easter")) and v.Size.X < 8 then
+                if not v:FindFirstChild("Sea1ESP") then
+                    local b = Instance.new("BillboardGui", v); b.Name = "Sea1ESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,80,0,40)
+                    local t = Instance.new("TextLabel", b); t.Size = UDim2.new(1,0,1,0); t.BackgroundTransparency = 1; t.TextScaled = true
+                    t.Text = "💎 " .. v.Name .. " 💎"; t.TextColor3 = Color3.fromRGB(0, 255, 255)
+                end
+            end
+        end
+    end
+end)
