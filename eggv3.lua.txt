@@ -1,0 +1,95 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "🐣 GHOST- 666 | EGG PRECISION V28",
+   LoadingTitle = "Đang hiệu chỉnh Radar bề mặt...",
+   ConfigurationSaving = {Enabled = false}
+})
+
+-- [[ THIẾT LẬP ]] --
+_G.AutoCollect = false
+_G.TweenSpeed = 300
+_G.SyncDelay = 0.5
+
+-- [[ HÀM NHẢY SERVER CẤP TỐC ]] --
+function FastHop()
+    local Http = game:GetService("HttpService")
+    local TPS = game:GetService("TeleportService")
+    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    
+    Rayfield:Notify({Title = "GHOST- 666", Content = "Đang tìm server vắng (1-2 người)...", Duration = 2})
+    
+    pcall(function()
+        local Servers = Http:JSONDecode(game:HttpGet(Api)).data
+        for i = 1, #Servers do
+            local s = Servers[i]
+            if s.playing >= 1 and s.playing <= 2 and s.id ~= game.JobId then
+                TPS:TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+                return
+            end
+        end
+    end)
+end
+
+-- [[ HÀM TÌM TRỨNG TRÊN MẶT ĐẤT ]] --
+function GetValidEggs()
+    local ValidEggs = {}
+    for _, v in pairs(game.Workspace:GetChildren()) do
+        -- Chỉ quét trong Workspace và là Part có tên liên quan đến Egg/Easter
+        if v:IsA("BasePart") and (v.Name:lower():find("egg") or v.Name:lower():find("easter")) then
+            table.insert(ValidEggs, v)
+        end
+    end
+    return ValidEggs
+end
+
+-- [[ GIAO DIỆN ]] --
+local Tab = Window:CreateTab("🥚 Săn Trứng", 4483362458)
+
+Tab:CreateToggle({
+   Name = "AUTO COLLECT (Quét bề mặt)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoCollect = Value
+      spawn(function()
+         while _G.AutoCollect do
+            local eggs = GetValidEggs()
+            local target = nil; local dist = math.huge
+            
+            for _, e in pairs(eggs) do
+                local d = (e.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                if d < dist then dist = d; target = e end
+            end
+            
+            if target then
+                local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+                local t = game:GetService("TweenService"):Create(hrp, TweenInfo.new((target.Position - hrp.Position).Magnitude/_G.TweenSpeed), {CFrame = target.CFrame})
+                t:Play()
+                t.Completed:Wait()
+                -- Nhặt trứng
+                firetouchinterest(hrp, target, 0); task.wait(0.1); firetouchinterest(hrp, target, 1)
+                task.wait(_G.SyncDelay)
+            end
+            task.wait(1.5)
+         end
+      end)
+   end,
+})
+
+Tab:CreateButton({
+   Name = "🌍 Nhảy Server (1-2 Người)",
+   Callback = function() FastHop() end,
+})
+
+-- [[ ESP RADAR ]] --
+spawn(function()
+    while task.wait(1) do
+        local eggs = GetValidEggs()
+        for _, e in pairs(eggs) do
+            if not e:FindFirstChild("EggESP") then
+                local b = Instance.new("BillboardGui", e); b.Name = "EggESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,100,0,50)
+                local t = Instance.new("TextLabel", b); t.Size = UDim2.new(1,0,1,0); t.BackgroundTransparency = 1; t.TextScaled = true; t.Text = "🥚 TRỨNG"; t.TextColor3 = Color3.new(0, 1, 1)
+            end
+        end
+    end
+end)
