@@ -1,0 +1,106 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST ABSOLUTE V100.0",
+   LoadingTitle = "Đang tách biệt Trứng và Hoa Tộc V2...",
+   ConfigurationSaving = {Enabled = false}
+})
+
+_G.AutoMode = false
+_G.Speed = 175 -- Tốc độ tàng hình, an toàn 100%
+
+-- [[ HÀM NHẢY SERVER CƯỠNG CHẾ (FIX ẢO) ]] --
+local function AbsoluteHop()
+    local TPS = game:GetService("TeleportService")
+    local Api = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+    pcall(function()
+        local data = game:GetService("HttpService"):JSONDecode(game:HttpGet(Api))
+        for _, s in pairs(data.data) do
+            if s.playing < 3 and s.id ~= game.JobId then
+                TPS:TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+                return
+            end
+        end
+    end)
+    task.wait(1)
+    TPS:Teleport(game.PlaceId) -- Dự phòng nếu API lỗi
+end
+
+-- [[ HÀM NHẬN DIỆN TRỨNG THẬT (LOẠI BỎ HOA V2) ]] --
+local function GetOnlyEggs()
+    local Eggs = {}
+    for _, v in pairs(game:GetService("Workspace"):GetDescendants()) do
+        -- ĐIỀU KIỆN LOẠI TRỪ HOA: 
+        -- 1. Tên phải chứa "Egg" (Hoa thường tên là Flower)
+        -- 2. Không được chứa chữ "Flower" trong tên
+        -- 3. Phải có TouchInterest để nhặt được
+        if v:IsA("BasePart") and v:FindFirstChild("TouchInterest") then
+            local name = v.Name:lower()
+            if name:find("egg") or name:find("easter") then
+                if not name:find("flower") and v.Size.X < 5 then
+                    table.insert(Eggs, v)
+                end
+            end
+        end
+    end
+    return Eggs
+end
+
+local Tab = Window:CreateTab("🥚 Săn Trứng Thật", 4483362458)
+
+Tab:CreateToggle({
+   Name = "CHẾ ĐỘ SĂN TRỨNG (BỎ QUA HOA V2)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoMode = Value
+      spawn(function()
+         while _G.AutoMode do
+            local targets = GetOnlyEggs()
+            if #targets == 0 then
+                Rayfield:Notify({Title = "GHOST- 666", Content = "Hết trứng! Đang nhảy server tìm kèo mới...", Duration = 2})
+                task.wait(1)
+                AbsoluteHop()
+                break
+            end
+            
+            local closest = nil; local dist = math.huge
+            for _, e in pairs(targets) do
+                local d = (e.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                if d < dist then dist = d; closest = e end
+            end
+            
+            if closest then
+                local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+                hrp.Velocity = Vector3.new(0,0,0)
+                local t = game:GetService("TweenService"):Create(hrp, TweenInfo.new((closest.Position - hrp.Position).Magnitude/_G.Speed), {CFrame = closest.CFrame})
+                t:Play()
+                t.Completed:Wait()
+                
+                hrp.Anchored = true
+                task.wait(2) -- Dừng lại lâu hơn để Server chắc chắn bạn đã nhặt Trứng
+                hrp.Anchored = false
+            end
+            task.wait(1)
+         end
+      end)
+   end,
+})
+
+Tab:CreateButton({
+   Name = "🌍 Nhảy Server (Tìm chỗ vắng)",
+   Callback = function() AbsoluteHop() end,
+})
+
+-- [[ ESP CHỈ HIỆN TRỨNG (MÀU XANH LỤC CHO DỄ NHÌN) ]] --
+spawn(function()
+    while task.wait(2) do
+        local eggs = GetOnlyEggs()
+        for _, e in pairs(eggs) do
+            if not e:FindFirstChild("FinalESP") then
+                local b = Instance.new("BillboardGui", e); b.Name = "FinalESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,100,0,50)
+                local t = Instance.new("TextLabel", b); t.Size = UDim2.new(1,0,1,0); t.BackgroundTransparency = 1; t.TextScaled = true
+                t.Text = "🥚 EGG HERE 🥚"; t.TextColor3 = Color3.fromRGB(0, 255, 0)
+            end
+        end
+    end
+end)
