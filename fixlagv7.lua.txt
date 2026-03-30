@@ -1,0 +1,82 @@
+-- [[ 1. HỆ THỐNG KHÓA NHIỆT (ANTI-HEAT) ]]
+-- Snapdragon 845 nóng nhất ở mảng đổ bóng và hậu kỳ
+local function BlackSharkOptimize()
+    local settings = settings()
+    local lighting = game:GetService("Lighting")
+    
+    -- Ép mức đồ họa nội bộ (Internal Quality) về 1
+    settings.Rendering.QualityLevel = 1
+    settings.Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level10 -- Giảm đa giác Mesh
+    
+    -- Vô hiệu hóa hoàn toàn hệ thống ánh sáng động (Nguồn gây nóng chính)
+    lighting.GlobalShadows = false
+    lighting.Outlines = false
+    lighting.Brightness = 1
+    lighting.ClockTime = 12 -- Giữ giờ cố định để không tính toán đổ bóng mặt trời
+    
+    -- Xóa các hiệu ứng gây "bỏng" tay khi cầm máy
+    for _, v in pairs(lighting:GetChildren()) do
+        if v:IsA("PostEffect") or v:IsA("BloomEffect") or v:IsA("BlurEffect") then
+            v.Enabled = false
+        end
+    end
+
+    -- [[ 2. GIẢM TẢI 70% VFX VÀ ẨN NGƯỜI CHƠI (THEO YÊU CẦU) ]]
+    for _, v in pairs(game:GetDescendants()) do
+        -- Ẩn người chơi khác (Chỉ giữ lại tên)
+        if v:IsA("Humanoid") and v.Parent.Name ~= game.Players.LocalPlayer.Name then
+            local char = v.Parent
+            for _, part in pairs(char:GetChildren()) do
+                if part:IsA("BasePart") or part:IsA("Accessory") then
+                    part.Transparency = 1
+                    part.CanCollide = false
+                end
+            end
+        end
+
+        -- Giảm 70% hiệu ứng chiêu thức của Trái Ánh Sáng
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Lifetime = NumberRange.new(v.Lifetime.Min * 0.3, v.Lifetime.Max * 0.3)
+            v.Rate = v.Rate * 0.3
+        end
+
+        -- Ép vật liệu SmoothPlastic để GPU Snapdragon 845 chạy mát
+        if v:IsA("BasePart") and v.Material ~= Enum.Material.SmoothPlastic then
+            v.Material = Enum.Material.SmoothPlastic
+        end
+    end
+end
+
+-- [[ 3. HỆ THỐNG TỰ ĐỘNG GIẢI PHÓNG RAM (ANDROID 8.1) ]]
+spawn(function()
+    while task.wait(5) do
+        -- Giải phóng bộ nhớ đệm liên tục để tránh treo máy
+        collectgarbage("collect")
+    end
+end)
+
+-- [[ 4. FPS UNLOCKER & STABILIZER ]]
+if setfpscap then 
+    setfpscap(120) -- Mở khóa lên 120 để khi sụt xuống vẫn giữ được mức trên 60
+end
+
+-- [[ 5. CHẾ ĐỘ TIẾT KIỆM NĂNG LƯỢNG KHI TREO ]]
+-- Nếu ngài không chạm vào màn hình trong 2 phút, giảm FPS xuống 15 để máy nguội
+local UserInputService = game:GetService("UserInputService")
+local lastInput = tick()
+
+UserInputService.InputBegan:Connect(function() lastInput = tick() end)
+
+spawn(function()
+    while task.wait(5) do
+        if tick() - lastInput > 120 then -- Nếu treo máy > 2 phút
+            setfpscap(20) -- Giảm FPS cực thấp để hạ nhiệt
+        else
+            setfpscap(120) -- Quay lại 60+ khi đang chơi
+        end
+    end
+end)
+
+-- KÍCH HOẠT
+BlackSharkOptimize()
+print("--- [GHOST BLACK SHARK] OPTIMIZED FOR SNAPDRAGON 845 ---")
