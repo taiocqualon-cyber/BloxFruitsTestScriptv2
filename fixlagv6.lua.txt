@@ -1,0 +1,89 @@
+--[[ 
+    GHOST - DELTA NITRO (OPTIMIZED FOR ANDROID)
+    - TƯƠNG THÍCH: Delta Executor.
+    - MỤC TIÊU: Giữ chặt 59-60 FPS, không drop khi PvP.
+    - CƠ CHẾ: Xóa hiệu ứng môi trường, Cắt 70% Skill, Giải phóng RAM Delta.
+]]
+
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+local RS = game:GetService("RunService")
+local LT = game:GetService("Lighting")
+local PL = game:GetService("Players").LocalPlayer
+
+-- 1. UNLOCK FPS CHO DELTA
+if setfpscap then setfpscap(60) end
+
+-- 2. HÀM TỐI ƯU CỰC HẠN (KHÔNG QUÉT QUÁ SÂU ĐỂ TRÁNH LAG)
+local function DeltaFix()
+    -- Hạ chất lượng render của Roblox
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    
+    -- Xóa bầu trời & Hiệu ứng ánh sáng (Giảm tải GPU cực lớn)
+    for _, v in pairs(LT:GetChildren()) do
+        if v:IsA("Sky") or v:IsA("Atmosphere") or v:IsA("Clouds") or v:IsA("PostEffect") then
+            v:Destroy()
+        end
+    end
+    LT.GlobalShadows = false
+    LT.FogEnd = 9e9
+    
+    -- Quét nhanh Workspace (Chỉ tập trung vào những thứ gây nặng máy)
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("DataModelMesh") or v:IsA("CharacterMesh") then
+            v:Destroy() -- Xóa Mesh phức tạp
+        elseif v:IsA("BasePart") then
+            v.Material = Enum.Material.SmoothPlastic -- ÉP NHỰA PHẲNG
+            v.Reflectance = 0
+            v.CastShadow = false
+            -- Xóa nước và cây cối (Tàng hình để tăng FPS)
+            if v.Name == "Water" or v.Name == "Sea" or v.Name:find("Leaf") then
+                v.Transparency = 1
+                v.CanCollide = false
+            end
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v:Destroy()
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            -- GIỮ 30% CHIÊU ĐỂ PvP, CẮT 70% ĐỂ MƯỢT
+            v.Lifetime = v.Lifetime * 0.3
+            if v:IsA("ParticleEmitter") then v.Rate = v.Rate * 0.3 end
+        end
+    end
+end
+
+-- 3. CƠ CHẾ CHỐNG LAG SPIKE (DỌN RÁC DELTA)
+task.spawn(function()
+    while task.wait(0.5) do
+        -- Xóa các mảnh vỡ kỹ năng ngay lập tức
+        for _, debris in pairs(workspace:GetChildren()) do
+            if debris.Name == "Debris" or debris.Name == "Effect" or debris.Name == "Part" and debris.Transparency == 1 then
+                debris:Destroy()
+            end
+        end
+        -- Giải phóng RAM Delta để tránh văng (Crash)
+        if collectgarbage then collectgarbage("collect") end
+    end
+end)
+
+-- 4. THEO DÕI FPS THỰC TẾ (NẾU DƯỚI 59 SẼ TỰ ĐIỀU CHỈNH)
+local sg = Instance.new("ScreenGui", PL.PlayerGui)
+local l = Instance.new("TextLabel", sg)
+l.Size, l.Position = UDim2.new(0, 150, 0, 30), UDim2.new(0.5, -75, 0, 10)
+l.BackgroundColor3, l.TextColor3 = Color3.new(0,0,0), Color3.new(0,1,0)
+l.Text = "FPS: 60 | DELTA NITRO"
+Instance.new("UICorner", l)
+
+RS.RenderStepped:Connect(function(dt)
+    local fps = math.floor(1/dt)
+    l.Text = "FPS: " .. fps .. " | GHOST"
+    if fps < 59 then
+        l.TextColor3 = Color3.new(1,0,0)
+        -- ÉP HẠ CẤP LẦN NỮA NẾU TỤT FPS
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    else
+        l.TextColor3 = Color3.new(0,1,0)
+    end
+end)
+
+pcall(DeltaFix)
+print("👿 GHOST DELTA NITRO: 60 FPS LOCKED. PvP READY!")
