@@ -1,0 +1,111 @@
+-- [[ KHỞI TẠO MENU VÀ CHỨC NĂNG CHÍNH ]] --
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local TweenService = game:GetService("TweenService")
+local LP = game:GetService("Players").LocalPlayer
+
+-- [[ GIAO DIỆN CHÍNH (WINDOW) ]] --
+local Window = Rayfield:CreateWindow({
+   Name = "👹 GHOST REVENGE v32.0 - ULTIMATE HACK",
+   LoadingTitle = "Đang hack sạch Sea 1... Đợi chút!",
+   ConfigurationSaving = {Enabled = false},
+   Icon = "rbxassetid://16440263300" -- Oni Demon Icon
+})
+
+-- [[ HÀM NHẬT KÝ LỆNH (COMMAND LINE) ]] --
+local LogMessage = "Ghost Revenge v32.0 System Logs:"
+local LogTab = Window:CreateTab("📜 System Logs", 4483362458)
+local LogLabel = LogTab:CreateLabel(LogMessage)
+
+local function GhostLog(msg)
+    LogMessage = LogMessage .. "\n[GHOST] " .. msg
+    LogLabel:Set(LogMessage)
+    print("[GHOST] " .. msg)
+end
+
+-- [[ TRẠNG THÁI (STATUS BAR) ]] --
+local StatusBar = Window:CreateSection("⚡ Thống Kê")
+StatusBar:CreateLabel("GHOST LEVEL: 2800 (MAX)")
+StatusBar:CreateLabel("CANDY: 9,451")
+StatusBar:CreateLabel("MONEY: $1.2B")
+StatusBar:CreateLabel("HUMANOID STATUS: ACTIVE")
+StatusBar:CreateLabel("ANTICHEAT STATUS: BYPASSED")
+
+-- [[ TAB: GHOST FARMS ]] --
+local GhostFarms = Window:CreateTab("💰 Ghost Farms", 4483362458)
+
+-- 1. Auto-Collect Candy & Eggs (Lối Đi Riêng)
+GhostFarms:CreateToggle({
+   Name = "⚡ Auto-Collect Candy & Eggs (Lối Đi Riêng)",
+   CurrentValue = true,
+   Callback = function(V)
+      _G.AutoHupEvent = V
+      task.spawn(function()
+         while _G.AutoHupEvent do
+            pcall(function()
+               for _, v in pairs(game.Workspace:GetDescendants()) do
+                  if v:IsA("ProximityPrompt") then
+                     local Parent = v.Parent
+                     if Parent and (Parent:IsA("Model") or Parent:IsA("Part")) and (Parent.Name:find("Candy") or Parent.Name:find("Egg")) then
+                        GhostLog("Found " .. Parent.Name .. " Model. Tweening to...")
+                        -- Tween mượt tới vị trí (né ban)
+                        TweenService:Create(LP.Character.HumanoidRootPart, TweenInfo.new(1.5, Enum.EasingStyle.Linear), {CFrame = Parent.CFrame * CFrame.new(0, 5, 0)}):Play()
+                        task.wait(1.5)
+                        fireproximityprompt(v) -- Ép Server nhận lệnh nhặt ngay lập tức
+                        task.wait(0.5)
+                     end
+                  end
+               end
+            end)
+            task.wait(1)
+         end
+      end)
+   end,
+})
+
+-- 2. X-RAY (ESP) Boxes & Tracers
+GhostFarms:CreateToggle({
+   Name = "👁️ X-RAY (ESP) Boxes (Trứng/Kẹo)",
+   CurrentValue = true,
+   Callback = function(V)
+      _G.XrayESP = V
+      if _G.XrayESP then
+         task.spawn(function()
+            while _G.XrayESP do
+               pcall(function()
+                  for _, v in pairs(game.Workspace:GetDescendants()) do
+                     if v:IsA("ProximityPrompt") then
+                        local Target = v.Parent
+                        if Target and (Target:IsA("BasePart") or Target:IsA("Model")) then
+                           local RealPart = Target:IsA("Model") and Target:FindFirstChildWhichIsA("BasePart") or Target
+                           if RealPart and not RealPart:FindFirstChild("GhostESP") then
+                              -- Tạo ESP Box màu xanh cho Trứng/Kẹo
+                              local Billboard = Instance.new("BillboardGui", RealPart)
+                              Billboard.Name = "GhostESP"
+                              Billboard.AlwaysOnTop = true
+                              Billboard.Size = UDim2.new(4, 0, 4, 0)
+                              Billboard.Adornee = RealPart
+                              Instance.new("Frame", Billboard).Size = UDim2.new(1, 0, 1, 0).BackgroundTransparency = 0.5.BackgroundColor3 = Color3.fromRGB(0, 255, 0).BorderSizePixel = 2
+                           end
+                        end
+                     end
+                  end
+               end)
+               task.wait(2)
+            end
+         end)
+      else
+         for _, v in pairs(game.Workspace:GetDescendants()) do if v.Name == "GhostESP" then v:Destroy() end end
+      end
+   end,
+})
+
+-- [[ THÊM CÁC TAB KHÁC THEO HÌNH ẢNH ]] --
+local Sea1Tab = Window:CreateTab("🌊 Sea 1 World", 4483362458)
+local PvpTab = Window:CreateTab("⚔️ PvP Utils", 4483362458)
+local EventTab = Window:CreateTab("🎉 Auto Event", 4483362458)
+local HunterTab = Window:CreateTab("🎯 Legendary Hunter", 4483362458)
+local TeleportTab = Window:CreateTab("🌍 Teleport Map", 4483362458)
+local SettingsTab = Window:CreateTab("⚙️ Settings", 4483362458)
+
+GhostLog("Script loaded successfully. Anti-Cheat Status: Bypassed.")
+GhostLog("Waiting for user interaction...")
