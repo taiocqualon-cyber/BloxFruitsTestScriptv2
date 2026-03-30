@@ -1,0 +1,112 @@
+-- [[ KHỞI TẠO THƯ VIỆN REDZ (SIÊU ỔN ĐỊNH) ]] --
+local RedzLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDZ312/RedzLibV2/main/Source.lua"))()
+
+-- [[ TẠO CỬA SỔ CHÍNH ]] --
+local Window = RedzLib:MakeWindow({
+  Name = "GHOST REVENGE v32.5 👹",
+  SubTitle = "Bypass Premium - No Key",
+  SaveFolder = "GhostRevengeConfig.json"
+})
+
+-- [[ TAB CHÍNH: FARM EVENT ]] --
+local Tab1 = Window:MakeTab("🧧 Event Farm", "egg")
+
+_G.AutoEvent = false
+Tab1:AddToggle({
+  Name = "Auto Hút Candy & Trứng (Lối Đi Riêng)",
+  Default = false,
+  Callback = function(Value)
+    _G.AutoEvent = Value
+    task.spawn(function()
+      while _G.AutoEvent do
+        pcall(function()
+          for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("ProximityPrompt") then
+              local p = v.Parent
+              if p and (p.Name:find("Candy") or p.Name:find("Egg") or p:IsA("Model")) then
+                -- Bay tới mục tiêu
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = p.CFrame * CFrame.new(0, 3, 0)
+                task.wait(0.1)
+                fireproximityprompt(v) -- Ép nhặt ngay lập tức
+              end
+            end
+          end
+        end)
+        task.wait(0.2)
+      end
+    end)
+  end
+})
+
+-- [[ TAB 2: X-RAY & ESP ]] --
+local Tab2 = Window:MakeTab("👁️ X-Ray", "eye")
+
+Tab2:AddButton({
+  Name = "Bật X-Ray Trứng & Kẹo (ESP Box)",
+  Callback = function()
+    for _, v in pairs(workspace:GetDescendants()) do
+      if v:IsA("ProximityPrompt") and v.Parent then
+        local box = Instance.new("BoxHandleAdornment", v.Parent)
+        box.Size = Vector3.new(2, 2, 2)
+        box.AlwaysOnTop = true
+        box.ZIndex = 10
+        box.Adornee = v.Parent
+        box.Color3 = Color3.new(0, 1, 0) -- Màu xanh lá
+        box.Transparency = 0.5
+      end
+    end
+  end
+})
+
+-- [[ TAB 3: COMBAT M1 ]] --
+local Tab3 = Window:MakeTab("⚔️ Combat", "sword")
+
+_G.FastM1 = false
+Tab3:AddToggle({
+  Name = "M1 Fast Attack (Bypass Animation)",
+  Default = false,
+  Callback = function(Value)
+    _G.FastM1 = Value
+    task.spawn(function()
+      while _G.FastM1 do
+        pcall(function()
+          local tool = game.Players.LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
+          if tool and (tool.ToolTip == "Blox Fruit" or tool.Name:find("Fruit")) then
+            -- Click chuột trái hệ thống
+            game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, game, 0)
+            task.wait(0.01)
+            game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, false, game, 0)
+          end
+        end)
+        task.wait(0.12) -- Tốc độ vàng né ban
+      end
+    end)
+  end
+})
+
+-- [[ TAB 4: SERVER UTILS ]] --
+local Tab4 = Window:MakeTab("🌍 Server", "map")
+
+Tab4:AddButton({
+  Name = "Nhảy Server 1 Người (Săn Trái Hiếm)",
+  Callback = function()
+    local Http = game:GetService("HttpService")
+    local TPS = game:GetService("TeleportService")
+    local Api = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+    local List = Http:JSONDecode(game:HttpGet(Api))
+    for _, s in pairs(List.data) do
+      if s.playing == 1 and s.id ~= game.JobId then
+        TPS:TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+      end
+    end
+  end
+})
+
+-- [[ TỰ ĐỘNG CHỐNG AFK ]] --
+local VU = game:GetService("VirtualUser")
+game.Players.LocalPlayer.Idled:Connect(function()
+  VU:CaptureController()
+  VU:ClickButton2(Vector2.new())
+end)
+
+print("GHOST REVENGE V32.5 LOADED! 👹")
