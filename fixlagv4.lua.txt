@@ -1,0 +1,109 @@
+-- [[ 1. BIẾN CẤU HÌNH OPTIMIZE ]]
+local Settings = {
+    VFX_Reduction = 0.7, -- Cắt 70% hiệu ứng
+    Graph_Reduction = 0.3, -- Giảm 30% đồ họa
+    Hide_Players = true -- Ẩn người chơi khác
+}
+
+-- [[ 2. HỆ THỐNG TĂNG FPS LÊN MỨC CAO NHẤT (FPS UNLOCKER) ]]
+if setfpscap then setfpscap(999) end -- Mở khóa FPS tối đa mà máy có thể đạt được
+print("--- [GHOST HUB] FPS UNLOCKED ---")
+
+-- [[ 3. MODULE CẮT GIẢM ĐỒ HỌA & HIỆU ỨNG (HYBRID CLEAN) ]]
+local function HybridOptimize()
+    local g = game
+    local w = g.Workspace
+    local l = g.Lighting
+
+    -- Tối ưu Lighting (Giảm 30% độ phức tạp)
+    l.GlobalShadows = false
+    l.FogEnd = 9e9
+    l.Brightness = 1
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level02 -- Mức thấp nhưng chưa phải thấp nhất
+
+    -- Quét toàn bộ game để tối ưu
+    for _, v in pairs(g:GetDescendants()) do
+        -- A. Giảm 30% Đồ họa (Giữ Material nhưng tắt CastShadow)
+        if v:IsA("BasePart") then
+            v.CastShadow = false -- Tắt đổ bóng (Tăng FPS cực lớn)
+            if v.Material == Enum.Material.Plastic or v.Material == Enum.Material.Wood or v.Material == Enum.Material.Stone then
+                -- Giữ nguyên vật liệu cơ bản để game không quá xấu
+            else
+                v.Material = Enum.Material.SmoothPlastic -- Ép các vật liệu phức tạp về Plastic
+            end
+        end
+
+        -- B. Cắt 70% Hiệu ứng (VFX Reduction)
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") then
+            -- Thay vì xóa, chúng ta giảm độ đậm đặc và độ trong suốt
+            v.Rate = v.Rate * (1 - Settings.VFX_Reduction) -- Giảm 70% số lượng hạt tạo ra
+            v.Transparency = NumberSequence.new(0.7) -- Làm mờ hiệu ứng 70%
+        end
+        
+        -- C. Xóa các hiệu ứng nổ lớn đặc thù gây lag
+        if v.Name == "Explosion" or v.Name == "LargeEffect" then
+            v:Destroy()
+        end
+    end
+
+    -- Tối ưu Terrain (Địa hình)
+    if w:FindFirstChild("Terrain") then
+        local t = w.Terrain
+        t.WaterWaveSize = 0
+        t.WaterWaveSpeed = 0
+        t.WaterReflectance = 0
+    end
+end
+
+-- [[ 4. MODULE ẨN NGƯỜI CHƠI KHÁC (INVISIBLE PLAYERS) ]]
+local function HideOtherPlayers()
+    if not Settings.Hide_Players then return end
+    local p = game.Players
+    local lp = p.LocalPlayer
+
+    local function MakeInvisible(char)
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") or part:IsA("Decal") then
+                part.Transparency = 1 -- Làm vô hình hoàn toàn
+                part.CanCollide = false
+            end
+            -- Giữ lại BillboardGui (Tên người chơi) để nhìn
+            if part:IsA("BillboardGui") then
+                part.Enabled = true
+            end
+        end
+    end
+
+    -- Ẩn người chơi đang có trong server
+    for _, player in pairs(p:GetPlayers()) do
+        if player ~= lp and player.Character then
+            MakeInvisible(player.Character)
+        end
+    end
+
+    -- Ẩn người chơi mới vào
+    p.PlayerAdded:Connect(function(player)
+        player.CharacterAdded:Connect(function(char)
+            task.wait(1) -- Đợi nhân vật load xong rồi mới ẩn
+            if player ~= lp then
+                MakeInvisible(char)
+            end
+        end)
+    end)
+end
+
+-- [[ 5. CHẾ ĐỘ DỌN RÁC BỘ NHỚ ]]
+spawn(function()
+    while task.wait(15) do
+        -- Giải phóng RAM để duy trì FPS cao
+        collectgarbage("collect")
+    end
+end)
+
+-- [[ KÍCH HOẠT TỔNG THỂ ]]
+spawn(function()
+    HybridOptimize() -- Chạy tối ưu đồ họa/hiệu ứng
+    HideOtherPlayers() -- Chạy ẩn người chơi
+end)
+
+print("--- [GHOST HUB] CẤU HÌNH PERFOMANCE ĐÃ ĐƯỢC THIẾT LẬP ---")
