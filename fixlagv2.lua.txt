@@ -1,0 +1,55 @@
+-- [[ 1. HỆ THỐNG XÓA SẠCH TEXTURE - BIẾN MỌI THỨ THÀNH NHỰA ]]
+local function DeepClean()
+    local g = game
+    local w = g.Workspace
+    local l = g.Lighting
+    local t = w:FindFirstChildOfClass("Terrain")
+
+    -- Ép chất lượng hiển thị về mức sàn
+    sethiddenproperty(l, "Technology", Enum.Technology.Compatibility)
+    l.GlobalShadows = false
+    l.FogEnd = 9e9
+    settings().Rendering.QualityLevel = 1
+
+    -- Xóa sạch vân bề mặt (Cái này cực mượt)
+    for _, v in pairs(g:GetDescendants()) do
+        if v:IsA("BasePart") or v:IsA("MeshPart") or v:IsA("Part") then
+            v.Material = Enum.Material.SmoothPlastic
+            v.Reflectance = 0
+            v.CastShadow = false
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v:Destroy() -- Xóa sổ toàn bộ tranh ảnh, vân gỗ, gạch đá
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Explosion") then
+            v.Enabled = false -- Tắt bụi, lửa, khói khi đánh chiêu Light
+        elseif v:IsA("PostEffect") or v:IsA("BloomEffect") or v:IsA("BlurEffect") then
+            v.Enabled = false
+        end
+    end
+
+    -- Xóa mây và hiệu ứng bầu trời
+    if g.Workspace:FindFirstChild("Terrain") then
+        t.WaterWaveSize = 0
+        t.WaterWaveSpeed = 0
+        t.WaterReflectance = 0
+        t.WaterTransparency = 0
+    end
+end
+
+-- [[ 2. CHẾ ĐỘ TREO MÁY TIẾT KIỆM PIN (CPU SAVER) ]]
+-- Nếu ngài không nhìn màn hình, hãy bật cái này để FPS tăng gấp đôi
+local function UltraCPUSaver()
+    game:GetService("RunService"):Set3dRenderingEnabled(false) -- Tắt hoàn toàn việc vẽ hình ảnh 3D
+end
+
+-- [[ 3. LỆNH DỌN RÁC BỘ NHỚ ]]
+spawn(function()
+    while task.wait(30) do
+        collectgarbage("collect") -- Tự động dọn RAM mỗi 30 giây
+    end
+end)
+
+-- [[ TÍCH HỢP VÀO GHOST HUB ]]
+-- Ngài chỉ cần gọi hàm DeepClean() khi bắt đầu Farm
+DeepClean()
+
+print("--- [GHOST HUB] ĐÃ ÉP ĐỒ HỌA VỀ MỨC NHỰA SIÊU PHẲNG ---")
