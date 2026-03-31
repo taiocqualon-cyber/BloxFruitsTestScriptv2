@@ -1,0 +1,158 @@
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Player = game.Players.LocalPlayer
+local CoreGui = game.CoreGui
+
+-- --- GIAO DIỆN CHÍNH (GUI) ---
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "UltraScanner_Combined_V3"
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 250, 0, 350)
+MainFrame.Position = UDim2.new(0, 50, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+
+-- Thanh Tab chọn chức năng
+local TabBar = Instance.new("Frame", MainFrame)
+TabBar.Size = UDim2.new(1, 0, 0, 40)
+TabBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Instance.new("UICorner", TabBar).CornerRadius = UDim.new(0, 10)
+
+local Tab1Btn = Instance.new("TextButton", TabBar)
+Tab1Btn.Size = UDim2.new(0.5, 0, 1, 0)
+Tab1Btn.Text = "TELEPORT"
+Tab1Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Tab1Btn.TextColor3 = Color3.new(1, 1, 1)
+
+local Tab2Btn = Instance.new("TextButton", TabBar)
+Tab2Btn.Size = UDim2.new(0.5, 0, 1, 0)
+Tab2Btn.Position = UDim2.new(0.5, 0, 0, 0)
+Tab2Btn.Text = "ESP (ĐỊNH VỊ)"
+Tab2Btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Tab2Btn.TextColor3 = Color3.new(1, 1, 1)
+
+-- Vùng chứa nội dung từng Tab
+local Content = Instance.new("Frame", MainFrame)
+Content.Size = UDim2.new(1, 0, 1, -45)
+Content.Position = UDim2.new(0, 0, 0, 45)
+Content.BackgroundTransparency = 1
+
+local Tab1Page = Instance.new("ScrollingFrame", Content)
+Tab1Page.Size = UDim2.new(1, 0, 1, 0)
+Tab1Page.BackgroundTransparency = 1
+Tab1Page.CanvasSize = UDim2.new(0, 0, 1.2, 0)
+local List1 = Instance.new("UIListLayout", Tab1Page)
+List1.Padding = UDim.new(0, 10)
+List1.HorizontalAlignment = "Center"
+
+local Tab2Page = Instance.new("ScrollingFrame", Content)
+Tab2Page.Size = UDim2.new(1, 0, 1, 0)
+Tab2Page.BackgroundTransparency = 1
+Tab2Page.Visible = false
+local List2 = Instance.new("UIListLayout", Tab2Page)
+List2.Padding = UDim.new(0, 10)
+List2.HorizontalAlignment = "Center"
+
+-- --- HÀM HỖ TRỢ (Từ code của bạn) ---
+
+local function Hop()
+    local PlaceId = game.PlaceId
+    local ApiUrl = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(ApiUrl)) end)
+    if success and result.data then
+        for _, s in ipairs(result.data) do
+            if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                TeleportService:TeleportToPlaceInstance(PlaceId, s.id, Player)
+                break
+            end
+        end
+    end
+end
+
+local function CreateESP(part, name, color)
+    if not part then return end
+    local bgu = Instance.new("BillboardGui", CoreGui)
+    bgu.Name = "ESP_UI"
+    bgu.AlwaysOnTop = true
+    bgu.Size = UDim2.new(0, 100, 0, 50)
+    bgu.Adornee = part
+    local txt = Instance.new("TextLabel", bgu)
+    txt.BackgroundTransparency = 1; txt.Size = UDim2.new(1, 0, 1, 0)
+    txt.Text = name; txt.TextColor3 = color; txt.Font = "SourceSansBold"; txt.TextSize = 14
+    local highlight = Instance.new("Highlight", part)
+    highlight.FillColor = color; highlight.OutlineColor = Color3.new(1, 1, 1)
+end
+
+local function RefreshESP()
+    for _, v in pairs(CoreGui:GetChildren()) do if v.Name == "ESP_UI" then v:Destroy() end end
+    for _, v in pairs(game.Workspace:GetDescendants()) do if v:IsA("Highlight") then v:Destroy() end end
+    
+    -- ESP Fruits
+    for _, v in pairs(game.Workspace:GetChildren()) do
+        if v:IsA("Tool") and (v.Name:find("Fruit") or v.Name:find("Trái")) then
+            CreateESP(v:FindFirstChild("Handle") or v, "🍎 " .. v.Name, Color3.fromRGB(255, 0, 0))
+        end
+    end
+    -- ESP NPCs
+    local npcTargets = {
+        ["Master of Auras"] = {Color3.fromRGB(255, 255, 0), "✨ Haki"},
+        ["Legendary Sword Dealer"] = {Color3.fromRGB(0, 255, 255), "⚔️ Sword"},
+        ["Colors Specialist"] = {Color3.fromRGB(255, 0, 255), "🎨 Color"}
+    }
+    for _, v in pairs(game.Workspace:GetDescendants()) do
+        if npcTargets[v.Name] then
+            CreateESP(v:FindFirstChild("HumanoidRootPart") or v, npcTargets[v.Name][2], npcTargets[v.Name][1])
+        end
+    end
+end
+
+local function MakeBtn(parent, txt, col, func)
+    local b = Instance.new("TextButton", parent)
+    b.Size = UDim2.new(0, 220, 0, 45)
+    b.BackgroundColor3 = col
+    b.Text = txt; b.TextColor3 = Color3.new(1, 1, 1); b.Font = "SourceSansBold"; b.TextSize = 14
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
+    b.MouseButton1Click:Connect(func)
+end
+
+-- --- NỘI DUNG TAB 1: TELEPORT ---
+MakeBtn(Tab1Page, "🌕 TÌM FULL MOON", Color3.fromRGB(100, 0, 200), function()
+    if game:GetService("Lighting"):GetAttribute("MoonPhase") == 5 then print("Full Moon!") else Hop() end
+end)
+MakeBtn(Tab1Page, "⚔️ TÌM NPC HIẾM", Color3.fromRGB(0, 150, 200), function()
+    local found = false
+    local targets = {"Legendary Sword Dealer", "Master of Auras", "Colors Specialist"}
+    for _, n in pairs(targets) do if game.Workspace:FindFirstChild(n) then found = true end end
+    if not found then Hop() else print("NPC is here!") end
+end)
+MakeBtn(Tab1Page, "🍎 TÌM TRÁI CÂY RƠI", Color3.fromRGB(200, 50, 50), function()
+    local f = false
+    for _, v in pairs(game.Workspace:GetChildren()) do if v:IsA("Tool") and v.Name:find("Fruit") then f = true end end
+    if not f then Hop() end
+end)
+MakeBtn(Tab1Page, "👥 SERVER VẮNG", Color3.fromRGB(50, 150, 50), Hop)
+
+-- --- NỘI DUNG TAB 2: ESP ---
+MakeBtn(Tab2Page, "🔍 REFRESH ESP NOW", Color3.fromRGB(60, 60, 60), RefreshESP)
+MakeBtn(Tab2Page, "❌ CLEAR ALL ESP", Color3.fromRGB(100, 100, 100), function()
+    for _, v in pairs(CoreGui:GetChildren()) do if v.Name == "ESP_UI" then v:Destroy() end end
+    for _, v in pairs(game.Workspace:GetDescendants()) do if v:IsA("Highlight") then v:Destroy() end end
+end)
+
+-- --- LOGIC CHUYỂN TAB ---
+Tab1Btn.MouseButton1Click:Connect(function()
+    Tab1Page.Visible = true; Tab2Page.Visible = false
+    Tab1Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45); Tab2Btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+end)
+Tab2Btn.MouseButton1Click:Connect(function()
+    Tab1Page.Visible = false; Tab2Page.Visible = true
+    Tab1Btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); Tab2Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+end)
+
+-- Tự động quét ESP mỗi 10s (Theo code ESP của bạn)
+spawn(function()
+    while true do RefreshESP(); task.wait(10) end
+end)
