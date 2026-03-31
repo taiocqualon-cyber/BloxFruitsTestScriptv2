@@ -1,0 +1,120 @@
+--[[ 
+    GHOST NITRO - EXCLUSIVE PRODUCT
+    - HỆ THỐNG: Key System (Bảo mật).
+    - TÍNH NĂNG: Auto Bounty, Candy Egg, 60 FPS Fixed.
+]]
+
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+-- 1. CÀI ĐẶT KEY (BẠN CÓ THỂ ĐỔI KEY Ở ĐÂY)
+local CorrectKey = "GHOST_NITRO_2026" 
+
+-- 2. GIAO DIỆN NHẬP KEY (UI)
+local Player = game:GetService("Players").LocalPlayer
+local sg = Instance.new("ScreenGui", Player.PlayerGui)
+sg.Name = "GhostKeySystem"
+
+local main = Instance.new("Frame", sg)
+main.Size = UDim2.new(0, 300, 0, 180)
+main.Position = UDim2.new(0.5, -150, 0.4, 0)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Instance.new("UICorner", main)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 40)
+title.Text = "👿 GHOST NITRO - KEY SYSTEM"
+title.TextColor3 = Color3.fromRGB(255, 0, 0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.BlackOpsOne
+title.TextSize = 18
+
+local input = Instance.new("TextBox", main)
+input.Size = UDim2.new(0.8, 0, 0, 40)
+input.Position = UDim2.new(0.1, 0, 0.3, 0)
+input.PlaceholderText = "Nhập Key vào đây..."
+input.Text = ""
+input.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+input.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", input)
+
+local checkBtn = Instance.new("TextButton", main)
+checkBtn.Size = UDim2.new(0.8, 0, 0, 40)
+checkBtn.Position = UDim2.new(0.1, 0, 0.65, 0)
+checkBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+checkBtn.Text = "XÁC NHẬN"
+checkBtn.TextColor3 = Color3.new(1, 1, 1)
+checkBtn.Font = Enum.Font.SourceSansBold
+Instance.new("UICorner", checkBtn)
+
+-- 3. LOGIC XỬ LÝ SCRIPT CHÍNH (KHI NHẬP ĐÚNG KEY)
+local function StartGhostScript()
+    sg:Destroy() -- Xóa bảng Key
+    print("👿 KEY CHÍNH XÁC. ĐANG KÍCH HOẠT GHOST NITRO...")
+
+    -- CẤU HÌNH BOUNTY CỦA BẠN
+    getgenv().config = {
+        ["Team"] = "Pirates", 
+        ["FPS Boost"] = true,
+        ["LocalPlayer"] = {
+            ["Ken Haki"] = true,
+            ["Invisible"] = true,
+            ["Click Delay"] = 0.05,
+            ["Panic Mode"] = { ["Skip Player"] = true, ["Run"] = 3000, ["Max"] = 6000 }
+        },
+        ["settings"] = {
+            ["Cam Farm"] = true,
+            ["FPS Locker"] = { ["Enabled"] = true, ["Value"] = 60 },
+            ["Chatkill"] = { ["Enabled"] = true, ["Text"] = {"👿 GHOST NITRO ON TOP"} },
+            ["Region_Hop"] = { ["Enabled"] = true, ["Value"] = "Singapore" }
+        },
+        ["Skills"] = {
+            ["Melee"] = { ["Enabled"] = true, ["Z"]={["Enabled"]=true}, ["X"]={["Enabled"]=true}, ["C"]={["Enabled"]=true} },
+            ["Sword"] = { ["Enabled"] = true, ["Z"]={["Enabled"]=true}, ["X"]={["Enabled"]=true} }
+        }
+    }
+
+    -- FIX LAG 60 FPS
+    task.spawn(function()
+        if setfpscap then setfpscap(60) end
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
+            if v:IsA("Decal") or v:IsA("Texture") then v:Destroy() end
+        end
+    end)
+
+    -- AUTO HÚT TRỨNG (CANDY EGG)
+    task.spawn(function()
+        while task.wait(0.5) do
+            pcall(function()
+                for _, v in pairs(workspace:GetChildren()) do
+                    if v.Name:find("Candy") or v.Name:find("Egg") then
+                        local p = v:IsA("BasePart") and v or v:FindFirstChildWhichIsA("BasePart")
+                        if p then
+                            p.CFrame = Player.Character.HumanoidRootPart.CFrame
+                            firetouchinterest(Player.Character.HumanoidRootPart, p, 0)
+                            task.wait()
+                            firetouchinterest(Player.Character.HumanoidRootPart, p, 1)
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+
+    -- LOAD SCRIPT GỐC
+    loadstring(game:HttpGet(("https://raw.githubusercontent.com/LeNguyenBaoPhuc/BloxFruits/main/Bounty.lua")))()
+end
+
+-- 4. KIỂM TRA KEY KHI NHẤN NÚT
+checkBtn.MouseButton1Click:Connect(function()
+    if input.Text == CorrectKey then
+        StartGhostScript()
+    else
+        checkBtn.Text = "SAI KEY! THỬ LẠI"
+        checkBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        task.wait(1.5)
+        checkBtn.Text = "XÁC NHẬN"
+        checkBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    end
+end)
