@@ -1,0 +1,41 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Eggs = {}
+local EggTable = {}
+
+local function AutoEgg()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            local character = player.Character
+            for _, child in pairs(character:GetChildren()) do
+                if child:IsA("Model") then
+                    for _, grandchild in pairs(child:GetChildren()) do
+                        if grandchild:IsA("BasePart") then
+                            if grandchild.Name:match("Blox") then
+                                Eggs[grandchild.Name] = grandchild
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+AutoEgg()
+
+local function AutoCandyEgg()
+    while wait(1) do
+        for name, egg in pairs(Eggs) do
+            if egg and egg.Parent == game.Workspace then
+                local fruit = game.ReplicatedStorage:FindFirstChild("Fruit")
+                if fruit then
+                    fruit:Clone().Parent = egg
+                end
+                Eggs[name] = nil
+            end
+        end
+    end
+end
