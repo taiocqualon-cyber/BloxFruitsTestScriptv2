@@ -1,0 +1,92 @@
+-- 1. THÔNG BÁO KHI SCRIPT CHẠY
+game.StarterGui:SetCore("SendNotification", {
+    Title = "GHOST STUDIO",
+    Text = "Đang khởi tạo thế giới... Đợi chút ngài ơi!",
+    Duration = 5
+})
+
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+-- 2. TẠO HÒN ĐẢO (ISLAND) DƯỚI CHÂN NGÀI
+local island = Instance.new("Part")
+island.Name = "GhostIsland"
+island.Size = Vector3.new(150, 2, 150)
+island.CFrame = root.CFrame * CFrame.new(0, -5, 0) -- Đặt dưới chân 5 block
+island.Anchored = true
+island.BrickColor = BrickColor.new("Bright green") -- Màu cỏ
+island.Material = Enum.Material.Grass
+island.Parent = game.Workspace
+
+-- 3. TẠO QUÁI (DUMMY ZOMBIE)
+local function SpawnMonster(pos)
+    local m = Instance.new("Model", game.Workspace)
+    m.Name = "Zombie_Lvl1"
+    
+    local head = Instance.new("Part", m)
+    head.Name = "Head"
+    head.Size = Vector3.new(2,2,2)
+    head.CFrame = pos
+    head.BrickColor = BrickColor.new("Slime green")
+    
+    local hum = Instance.new("Humanoid", m)
+    hum.MaxHealth = 100
+    hum.Health = 100
+    
+    -- Hiện thanh máu và tên trên đầu cho giống Blox Fruits
+    m.PrimaryPart = head
+end
+
+-- Triệu hồi 5 con quái ngẫu nhiên trên đảo
+for i = 1, 5 do
+    SpawnMonster(island.CFrame * CFrame.new(math.random(-50,50), 5, math.random(-50,50)))
+end
+
+-- 4. TẶNG KIẾM SKILL (AUTO ADD VÀO TÚI)
+local tool = Instance.new("Tool")
+tool.Name = "Ghost Blade"
+tool.RequiresHandle = true
+tool.Parent = player.Backpack
+
+local handle = Instance.new("Part", tool)
+handle.Name = "Handle"
+handle.Size = Vector3.new(1, 6, 1)
+handle.BrickColor = BrickColor.new("Institutional white")
+handle.Material = Enum.Material.Neon
+
+-- SCRIPT KỸ NĂNG (SKILL Z)
+tool.Activated:Connect(function()
+    -- Hiệu ứng sóng xung kích
+    local ring = Instance.new("Part", game.Workspace)
+    ring.Shape = Enum.PartType.Ball
+    ring.Size = Vector3.new(1, 1, 1)
+    ring.CFrame = root.CFrame
+    ring.Anchored = true
+    ring.CanCollide = false
+    ring.Transparency = 0.5
+    ring.BrickColor = BrickColor.new("Cyan")
+    ring.Material = Enum.Material.Neon
+    
+    -- Phóng to hiệu ứng
+    spawn(function()
+        for i = 1, 20 do
+            ring.Size = ring.Size + Vector3.new(2, 2, 2)
+            ring.Transparency = ring.Transparency + 0.05
+            wait(0.01)
+        end
+        ring:Destroy()
+    end)
+
+    -- Gây sát thương diện rộng
+    for _, v in pairs(game.Workspace:GetChildren()) do
+        if v:IsA("Model") and v:FindFirstChild("Humanoid") and v.Name ~= player.Name then
+            local dist = (v.PrimaryPart.Position - root.Position).Magnitude
+            if dist < 20 then
+                v.Humanoid:TakeDamage(40)
+            end
+        end
+    end
+end)
+
+print("Ghost World Created!")
