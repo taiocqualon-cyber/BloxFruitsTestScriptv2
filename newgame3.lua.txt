@@ -1,0 +1,70 @@
+-- ===============================
+-- Roblox Lite / Delta Ta: Auto Game
+-- ===============================
+local Workspace = game:GetService("Workspace")
+
+-- ===== TẠO FLOOR =====
+local floor = Instance.new("Part")
+floor.Size = Vector3.new(50,1,50)
+floor.Position = Vector3.new(0,0,0)
+floor.Anchored = true
+floor.BrickColor = BrickColor.new("Medium stone grey")
+floor.Parent = Workspace
+
+-- ===== TẠO NHÂN VẬT =====
+local playerChar = Instance.new("Part")
+playerChar.Size = Vector3.new(2,5,1)
+playerChar.Position = Vector3.new(0,3,0)
+playerChar.BrickColor = BrickColor.new("Bright blue")
+playerChar.Anchored = false
+playerChar.Name = "Player"
+playerChar.Parent = Workspace
+
+-- ===== HÀM TẤN CÔNG =====
+function AttackSkill()
+    for _, enemy in pairs(Workspace:GetChildren()) do
+        if enemy.Name == "Enemy" then
+            local distance = (enemy.Position - playerChar.Position).magnitude
+            if distance <= 5 then
+                enemy:Destroy()
+            end
+        end
+    end
+end
+
+-- Gọi attack khi nhân vật chạm quái
+playerChar.Touched:Connect(function(hit)
+    AttackSkill()
+end)
+
+-- ===== TẠO QUÁI =====
+for i = 1, 5 do
+    local enemy = Instance.new("Part")
+    enemy.Size = Vector3.new(2,4,1)
+    enemy.Position = Vector3.new(math.random(-20,20),2,math.random(-20,20))
+    enemy.BrickColor = BrickColor.new("Bright red")
+    enemy.Name = "Enemy"
+    enemy.Anchored = false
+    enemy.Parent = Workspace
+
+    -- Di chuyển quái về hướng nhân vật
+    coroutine.wrap(function()
+        while enemy.Parent do
+            local direction = (playerChar.Position - enemy.Position).unit
+            enemy.Position = enemy.Position + direction * 0.2
+            wait(0.1)
+        end
+    end)()
+end
+
+-- ===== MAP VẬT CẢN NGẪU NHIÊN =====
+for i = 1, 5 do
+    local block = Instance.new("Part")
+    block.Size = Vector3.new(4,4,4)
+    block.Position = Vector3.new(math.random(-20,20),2,math.random(-20,20))
+    block.Anchored = true
+    block.BrickColor = BrickColor.Random()
+    block.Parent = Workspace
+end
+
+print("🎮 Game tự tạo xong! Nhân vật xanh, quái đỏ, vật cản đầy đủ.")
