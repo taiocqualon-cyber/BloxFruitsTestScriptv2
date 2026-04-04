@@ -1,0 +1,63 @@
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+
+-- Danh sách quái
+local enemies = {}
+for _, obj in pairs(Workspace:GetChildren()) do
+    if obj.Name == "Enemy" then
+        obj.HP = 3
+        table.insert(enemies, obj)
+    end
+end
+
+local playerChar = Workspace:FindFirstChild("Player") -- Nhân vật sẵn có
+if not playerChar then return end
+
+-- ===== Skill 1: Sarengan =====
+function Sarengan()
+    local spin = Instance.new("Part")
+    spin.Size = Vector3.new(1,1,1)
+    spin.Position = playerChar.Position + Vector3.new(0,2,0)
+    spin.BrickColor = BrickColor.new("Bright blue")
+    spin.Material = Enum.Material.Neon
+    spin.Anchored = false
+    spin.Parent = Workspace
+
+    local tween = TweenService:Create(spin, TweenInfo.new(1, Enum.EasingStyle.Linear), {Position = spin.Position + playerChar.CFrame.LookVector*20})
+    tween:Play()
+    tween.Completed:Connect(function() spin:Destroy() end)
+
+    spin.Touched:Connect(function(hit)
+        for _, enemy in pairs(enemies) do
+            if hit == enemy then
+                enemy.HP = enemy.HP - 1
+                if enemy.HP <= 0 then
+                    enemy:Destroy()
+                end
+            end
+        end
+    end)
+end
+
+-- ===== Skill 2: Hư Thức Tử =====
+function CursedTechnique()
+    local aoe = Instance.new("Part")
+    aoe.Size = Vector3.new(10,1,10)
+    aoe.Position = playerChar.Position
+    aoe.BrickColor = BrickColor.new("Royal purple")
+    aoe.Material = Enum.Material.Neon
+    aoe.Anchored = true
+    aoe.Parent = Workspace
+    game:GetService("Debris"):AddItem(aoe, 1)
+
+    for _, enemy in pairs(enemies) do
+        if (enemy.Position - playerChar.Position).magnitude <= 5 then
+            enemy.HP = enemy.HP - 2
+            if enemy.HP <= 0 then
+                enemy:Destroy()
+            end
+        end
+    end
+end
+
+print("Skill đã sẵn sàng! Gọi Sarengan() hoặc CursedTechnique() để thi triển.")
