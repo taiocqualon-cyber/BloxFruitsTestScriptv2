@@ -1,0 +1,96 @@
+local player = game.Players.LocalPlayer
+
+-- Đợi game load xong hẳn và nhân vật hiện ra
+repeat wait() until game:IsLoaded() and player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+
+local char = player.Character
+local root = char:WaitForChild("HumanoidRootPart") -- Kiên nhẫn đợi bộ phận cốt lõi
+
+-- THÔNG BÁO KHI SCRIPT CHẠY
+game.StarterGui:SetCore("SendNotification", {
+    Title = "GHOST STUDIO",
+    Text = "Nhân vật đã load. Đang khởi tạo thế giới!",
+    Duration = 5
+})
+
+print("--- KHOI TAO GHOST WORLD V3 (ĐÃ SỬA LỖI NIL) ---")
+
+-- 1. TẠO HÒN ĐẢO (LUÔN HIỆN DƯỚI CHÂN)
+local island = Instance.new("Part")
+island.Name = "DaoMa"
+island.Size = Vector3.new(200, 5, 200)
+island.CFrame = root.CFrame * CFrame.new(0, -10, 0) -- Đặt sâu xuống dưới chân
+island.Anchored = true
+island.CanCollide = true
+island.BrickColor = BrickColor.new("Dark green")
+island.Material = Enum.Material.Grass
+island.Parent = game.Workspace
+
+-- 2. TẠO ZOMBIE (SỐNG DẬY QUANH ĐẢO)
+local function SpawnZombie(vị_trí)
+    local m = Instance.new("Model", game.Workspace)
+    m.Name = "Zombie_Ghost"
+    local p = Instance.new("Part", m)
+    p.Name = "Head"
+    p.Size = Vector3.new(3,3,3)
+    p.CFrame = vị_trí
+    p.BrickColor = BrickColor.new("Lime green")
+    p.Material = Enum.Material.Neon
+    local h = Instance.new("Humanoid", m)
+    h.MaxHealth = 100
+    h.Health = 100
+    m.PrimaryPart = p
+end
+
+-- Triệu hồi 5 con quái ngẫu nhiên trên đảo
+for i = 1, 5 do
+    SpawnZombie(island.CFrame * CFrame.new(math.random(-40,40), 10, math.random(-40,40)))
+end
+
+-- 3. TẠO KIẾM SKILL (GẮN THẲNG VÀO BALO)
+local tool = Instance.new("Tool")
+tool.Name = "Ghost Blade Z" -- Đổi tên cho ngầu
+tool.RequiresHandle = true
+tool.Parent = player.Backpack -- Gắn vào túi đồ
+
+local handle = Instance.new("Part", tool)
+handle.Name = "Handle"
+handle.Size = Vector3.new(1, 6, 1)
+handle.BrickColor = BrickColor.new("White")
+handle.Material = Enum.Material.Neon
+
+-- SKILL: NHẤN VÀO MÀN HÌNH ĐỂ TUNG CHIÊU
+tool.Activated:Connect(function()
+    if not root or not root.Parent then return end -- Kiểm tra lại vị trí
+    
+    -- Hiệu ứng nổ (Vòng tròn đỏ)
+    local boom = Instance.new("Part", game.Workspace)
+    boom.Shape = Enum.PartType.Ball
+    boom.Size = Vector3.new(1, 1, 1)
+    boom.CFrame = root.CFrame -- Dùng vị trí người chơi
+    boom.Anchored = true
+    boom.CanCollide = false
+    boom.BrickColor = BrickColor.new("Really red")
+    boom.Material = Enum.Material.Neon
+    boom.Transparency = 0.5
+    
+    -- Phóng to vòng tròn
+    task.spawn(function()
+        for i = 1, 10 do
+            boom.Size = boom.Size + Vector3.new(3, 3, 3)
+            boom.Transparency = boom.Transparency + 0.05
+            task.wait(0.02)
+        end
+        boom:Destroy()
+    end)
+
+    -- Sát thương cho Zombie xung quanh (AOE)
+    for _, obj in pairs(game.Workspace:GetChildren()) do
+        if obj.Name == "Zombie_Ghost" and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("Head") then
+            local dist = (obj.PrimaryPart.Position - root.Position).Magnitude
+            if dist < 25 then
+                obj.Humanoid:TakeDamage(50)
+            end
+        end
+    end
+end)
