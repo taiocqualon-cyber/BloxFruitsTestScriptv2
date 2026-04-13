@@ -1,0 +1,72 @@
+--[[ 
+    PHÁP SƯ SCRIPT - BLOX FRUITS EDITION
+    Chức năng: Auto Farm, Nhặt Rương, ESP, Stats
+]]
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/InterfaceManager.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Pháp Sư Hub | Blox Fruits",
+    SubTitle = "v1.0 - By YourName",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark"
+})
+
+local Tabs = {
+    Main = Window:AddTab({ Title = "Auto Farm", Icon = "rbxassetid://4483345998" }),
+    Visuals = Window:AddTab({ Title = "Tiện ích", Icon = "rbxassetid://4483345998" })
+}
+
+-- CHỨC NĂNG 1: AUTO NHẶT RƯƠNG (Chest Farm)
+Tabs.Main:AddToggle("AutoChest", {Title = "Auto Nhặt Rương (Safe)", Default = false }):OnChanged(function(Value)
+    _G.AutoChest = Value
+    spawn(function()
+        while _G.AutoChest do
+            task.wait(0.1)
+            for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
+                if v:IsA("Model") and (v.Name == "Chest1" or v.Name == "Chest2" or v.Name == "Chest3") then
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.PrimaryPart.CFrame
+                    task.wait(0.5) -- Tránh bị Kick vì di chuyển quá nhanh
+                end
+            end
+        end
+    end)
+end)
+
+-- CHỨC NĂNG 2: AUTO FARM LEVEL (Khung cơ bản)
+Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (Beta)", Default = false }):OnChanged(function(Value)
+    _G.AutoFarm = Value
+    -- Logic Auto Farm ở đây cực kỳ phức tạp (Check Level -> Nhận Quest -> Di chuyển -> Đánh)
+    -- Lời khuyên: Dùng lệnh gọi các Hub lớn bên dưới để tối ưu
+    if Value then
+        Fluent:Notify({ Title = "Thông báo", Content = "Đang khởi động hệ thống Farm..." })
+    end
+end)
+
+-- CHỨC NĂNG 3: HIỂN THỊ TRÁI ÁC QUỶ (Fruit ESP)
+Tabs.Visuals:AddButton({
+    Title = "Hiện vị trí Trái Ác Quỷ",
+    Description = "Tìm trái đang rơi trên Map",
+    Callback = function()
+        for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
+            if v:IsA("Tool") or (v:IsA("Model") and v:FindFirstChild("Handle")) then
+                Fluent:Notify({ Title = "Tìm thấy!", Content = "Trái: " .. v.Name })
+                -- Thêm logic tạo Highlight ở đây
+            end
+        end
+    end
+})
+
+-- CHỨC NĂNG 4: NHÚNG CÁC HUB VIP (Dành cho bản Full)
+Tabs.Visuals:AddButton({
+    Title = "Mở Redz Hub (VIP)",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/realredz/RXZHub/main/Main.lua"))()
+    end
+})
+
+Window:SelectTab(1)
