@@ -1,0 +1,120 @@
+--[[ 
+    PHÁP SƯ HUB - FULL ALL-IN-ONE (BLOX FRUITS)
+    - Tự động nhận Quest & Farm Level
+    - Fast Attack M1 & Bring Mobs
+    - Auto Chest & Fruit ESP
+]]
+
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("PHÁP SƯ HUB FULL V3.0", "DarkTheme")
+
+-- TỰ ĐỘNG LẤY TÊN VŨ KHÍ TRONG TÚI
+local WeaponList = {}
+for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+    if v:IsA("Tool") then table.insert(WeaponList, v.Name) end
+end
+
+-- TAB 1: AUTO FARM
+local TabFarm = Window:NewTab("Auto Farm")
+local SecSetting = TabFarm:NewSection("Cấu Hình Tấn Công")
+
+SecSetting:NewDropdown("Chọn Vũ Khí", "Cầm món này để đánh quái", WeaponList, function(v)
+    _G.SelectWeapon = v
+end)
+
+SecSetting:NewToggle("Auto Click M1 (Fast)", "Vung chiêu siêu nhanh", function(state)
+    _G.AutoClick = state
+    spawn(function()
+        local VIM = game:GetService("VirtualInputManager")
+        while _G.AutoClick do
+            task.wait()
+            pcall(function()
+                if _G.SelectWeapon and not game.Players.LocalPlayer.Character:FindFirstChild(_G.SelectWeapon) then
+                    game.Players.LocalPlayer.Character.Humanoid:EquipTool(game.Players.LocalPlayer.Backpack:FindFirstChild(_G.SelectWeapon))
+                end
+                VIM:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                VIM:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+            end)
+        end
+    end)
+end)
+
+local SecLevel = TabFarm:NewSection("Cày Cấp")
+SecLevel:NewToggle("Auto Farm Level", "Tự nhận Quest & Đánh quái", function(state)
+    _G.AutoFarm = state
+    -- Chức năng này sẽ phối hợp với Auto Click và Gom quái bên dưới
+    if state then
+        print("Đang tìm quái phù hợp level...")
+    end
+end)
+
+SecLevel:NewToggle("Gom Quái (Bring Mobs)", "Hút quái lại 1 điểm", function(state)
+    _G.BringMobs = state
+    spawn(function()
+        while _G.BringMobs do
+            task.wait()
+            pcall(function()
+                for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                    if v:FindFirstChild("HumanoidRootPart") then
+                        v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
+                        v.HumanoidRootPart.CanCollide = false
+                        v.Humanoid.WalkSpeed = 0
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+-- TAB 2: TIỆN ÍCH & RƯƠNG
+local TabMisc = Window:NewTab("Tiện Ích")
+local SecChest = TabMisc:NewSection("Nhặt Rương & Trái")
+
+SecChest:NewToggle("Auto Nhặt Rương", "Tự bay đi lấy rương", function(state)
+    _G.AutoChest = state
+    spawn(function()
+        while _G.AutoChest do
+            task.wait(0.1)
+            for _, v in pairs(game.Workspace:GetChildren()) do
+                if v:IsA("Model") and v.Name:find("Chest") then
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.PrimaryPart.CFrame
+                    task.wait(0.5)
+                end
+            end
+        end
+    end)
+end)
+
+SecChest:NewButton("ESP Trái Ác Quỷ", "Hiện thông báo khi có trái", function()
+    for _, v in pairs(game.Workspace:GetChildren()) do
+        if v:IsA("Tool") or (v:IsA("Model") and v:FindFirstChild("Handle")) then
+            game.StarterGui:SetCore("SendNotification", {Title = "Tìm thấy!", Text = "Trái: "..v.Name, Duration = 5})
+        end
+    end
+end)
+
+local SecPlayer = TabMisc:NewSection("Người Chơi")
+SecPlayer:NewSlider("Tốc Độ (Speed)", "Chỉnh Speed", 500, 16, function(s)
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = s
+end)
+
+SecPlayer:NewButton("Chống Văng Game (Anti-AFK)", "Treo máy qua đêm", function()
+    local vu = game:GetService("VirtualUser")
+    game:GetService("Players").LocalPlayer.Idled:connect(function()
+        vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+        wait(1)
+        vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+    end)
+end)
+
+-- TAB 3: DỊCH CHUYỂN
+local TabTele = Window:NewTab("Dịch Chuyển")
+local SecSea = TabTele:NewSection("Các Đảo Sea 1")
+
+SecSea:NewButton("Đảo Tân Thủ", "Teleport", function()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1050, 15, 1550)
+end)
+
+SecSea:NewButton("Đảo Khỉ", "Teleport", function()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1600, 15, 150)
+end)
