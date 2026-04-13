@@ -1,0 +1,91 @@
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local Window = Fluent:CreateWindow({
+    Title = "PHÁP SƯ HUB V6.0",
+    SubTitle = "Blox Fruits Pro Edition",
+    TabWidth = 160, Size = UDim2.fromOffset(580, 460), Acrylic = false, Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.End -- Nhấn End để thu nhỏ/hiện menu
+})
+
+local Tabs = { Main = Window:AddTab({ Title = "Auto Farm", Icon = "rbxassetid://4483345998" }) }
+
+-- [ DATA SEA 1 ]
+local Quests = {
+    {Level = 0, Name = "BanditQuest1", Monster = "Bandit", QPos = CFrame.new(1059, 16, 1545), MPos = CFrame.new(1145, 16, 1580)},
+    {Level = 10, Name = "MonkeyQuest1", Monster = "Monkey", QPos = CFrame.new(-1598, 36, 153), MPos = CFrame.new(-1620, 36, 170)},
+    {Level = 15, Name = "GorillaQuest1", Monster = "Gorilla", QPos = CFrame.new(-1598, 36, 153), MPos = CFrame.new(-1200, 30, -500)},
+    {Level = 30, Name = "PirateQuest1", Monster = "Pirate", QPos = CFrame.new(-1140, 4, 3827), MPos = CFrame.new(-1100, 4, 3900)}
+}
+
+-- [ HÀM HỖ TRỢ ]
+local function GetQuestData()
+    local lvl = game.Players.LocalPlayer.Data.Level.Value
+    local best = Quests[1]
+    for _, q in ipairs(Quests) do
+        if lvl >= q.Level then best = q end
+    end
+    return best
+end
+
+function Tween(target)
+    local part = game.Players.LocalPlayer.Character.HumanoidRootPart
+    local dist = (part.Position - target.p).Magnitude
+    local speed = 250
+    game:GetService("TweenService"):Create(part, TweenInfo.new(dist/speed, Enum.EasingStyle.Linear), {CFrame = target}):Play()
+    task.wait(dist/speed)
+end
+
+-- [ AUTO FARM CHÍNH ]
+Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (Tween + Quest)", Default = false}):OnChanged(function(v)
+    _G.AutoFarm = v
+    task.spawn(function()
+        while _G.AutoFarm do
+            task.wait()
+            local data = GetQuestData()
+            
+            -- Kiểm tra đã nhận Quest chưa
+            if not game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible then
+                Tween(data.QPos)
+                -- Lệnh nhận Quest (Cần Remote chính xác của game để hoạt động 100%)
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", data.Name, 1)
+            else
+                -- Đi farm quái
+                for _, m in pairs(game.Workspace.Enemies:GetChildren()) do
+                    if m.Name == data.Monster and m:FindFirstChild("Humanoid") and m.Humanoid.Health > 0 then
+                        repeat
+                            task.wait()
+                            -- TWEEN LÊN ĐẦU QUÁI (Cách 5 units)
+                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = m.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                            -- FAST ATTACK REMOTE
+                            game:GetService("ReplicatedStorage").RigControllerEvent:FireServer("Attack")
+                        until not _G.AutoFarm or m.Humanoid.Health <= 0 or not m.Parent
+                    end
+                end
+                -- Nếu không thấy quái thì bay đến bãi quái
+                Tween(data.MPos)
+            end
+        end
+    end)
+end)
+
+-- [ AUTO NHẶT RƯƠNG ]
+Tabs.Main:AddToggle("AutoChest", {Title = "Auto Chest (Fixed)", Default = false}):OnChanged(function(v)
+    _G.AutoChest = v
+    task.spawn(function()
+        while _G.AutoChest do
+            task.wait()
+            local chest = nil
+            for _, obj in pairs(game.Workspace:GetChildren()) do
+                if obj.Name:find("Chest") then chest = obj break end
+            end
+            
+            if chest then
+                Tween(chest.PrimaryPart.CFrame)
+                task.wait(0.2)
+            else
+                -- Nếu hết rương thì đổi Server (Cần thêm code Server Hop)
+                Fluent:Notify({Title = "Thông báo", Content = "Hết rương, đang quét lại..."})
+                task.wait(5)
+            end
+        end
+    end)
+end)
