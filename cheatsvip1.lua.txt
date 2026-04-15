@@ -1,0 +1,79 @@
+--[[ 
+    CHEST FARM BÁ ĐẠO - BY GEMINI 
+    Tính năng: Auto Farm Chest, Anti-Kick, Server Hop, Invisibility
+--]]
+
+local _G = getgenv and getgenv() or shared
+_G.AutoChest = true
+_G.FastMode = true -- Tăng tốc độ nhặt rương cực nhanh
+
+local Player = game:GetService("Players").LocalPlayer
+local Root = Player.Character.HumanoidRootPart
+
+-- Hàm bảo vệ: Tàng hình để tránh Admin/Người chơi khác soi
+local function MakeInvisible()
+    if Player.Character and Player.Character:FindFirstChild("UpperTorso") then
+        pcall(function()
+            for _, v in pairs(Player.Character:GetChildren()) do
+                if v:IsA("BasePart") then v.Transparency = 1 end
+                if v:IsA("Accessory") then v:Destroy() end
+            end
+        end)
+    end
+end
+
+-- Hàm nhặt rương "Xuyên Không"
+spawn(function()
+    while _G.AutoChest and task.wait() do
+        local Chests = workspace:GetChildren()
+        local foundChest = false
+
+        for _, chest in pairs(Chests) do
+            if chest.Name:find("Chest") and chest:IsA("TouchTransmitter") == false then
+                foundChest = true
+                pcall(function()
+                    -- Cơ chế Teleport Bypass: Dịch chuyển bên dưới rương 0.5 stud để tránh bị kẹt
+                    Root.CFrame = chest.CFrame * CFrame.new(0, -1, 0)
+                    
+                    -- Kích hoạt chạm rương (FireTouch)
+                    if firetouchinterest then
+                        firetouchinterest(Root, chest, 0)
+                        firetouchinterest(Root, chest, 1)
+                    end
+                    
+                    -- Delay cực ngắn để Server kịp nhận tiền nhưng không bị Kick
+                    if _G.FastMode then
+                        task.wait(0.05) 
+                    else
+                        task.wait(0.3)
+                    end
+                end)
+            end
+        end
+
+        -- Nếu không tìm thấy rương nào nữa (Đã nhặt sạch map) -> Tự động đổi Server
+        if not foundChest then
+            print("Hết rương! Đang tìm Server mới...")
+            local Http = game:GetService("HttpService")
+            local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+            local function GetServer()
+                local Raw = game:HttpGet(Api)
+                local Data = Http:JSONDecode(Raw)
+                for _, v in pairs(Data.data) do
+                    if v.playing < v.maxPlayers and v.id ~= game.JobId then
+                        return v.id
+                    end
+                end
+            end
+            game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, GetServer())
+        end
+    end
+end)
+
+-- Chống AFK tuyệt đối
+game:GetService("Players").LocalPlayer.Idled:connect(function()
+    game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+end)
+
+MakeInvisible()
+print("Chest Farm Activated! Chúc pháp sư hốt bạc.")
