@@ -1,0 +1,129 @@
+--[[
+    DEVIL HUB - CHEST FARM EDITION (2026)
+    Tính năng: Icon nổi, Menu bật tắt, Auto Farm Chest, Server Hop
+--]]
+
+local Library = {}
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local Icon = Instance.new("TextButton")
+local Title = Instance.new("TextLabel")
+local ToggleChest = Instance.new("TextButton")
+local ToggleHop = Instance.new("TextButton")
+
+-- Cấu hình mặc định
+_G.AutoChest = false
+_G.AutoHop = false
+
+-- 1. TẠO GUI GỐC
+ScreenGui.Name = "DevilHubGui"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- 2. TẠO ICON 👿 (Nút đóng/mở)
+Icon.Name = "DevilIcon"
+Icon.Parent = ScreenGui
+Icon.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Icon.Position = UDim2.new(0.1, 0, 0.1, 0)
+Icon.Size = UDim2.new(0, 50, 0, 50)
+Icon.Text = "👿"
+Icon.TextSize = 30
+Icon.Draggable = true -- Cho phép bạn kéo icon đi khắp màn hình
+local Corner = Instance.new("UICorner", Icon)
+Corner.CornerRadius = UDim.new(0, 50)
+
+-- 3. TẠO MENU CHÍNH (Ẩn khi bắt đầu)
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -75)
+MainFrame.Size = UDim2.new(0, 200, 0, 150)
+MainFrame.Visible = false
+MainFrame.Active = true
+MainFrame.Draggable = true
+local FrameCorner = Instance.new("UICorner", MainFrame)
+
+Title.Parent = MainFrame
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "DEVIL HUB V1"
+Title.TextColor3 = Color3.fromRGB(255, 0, 0)
+Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Title.TextSize = 18
+
+-- 4. HÀM ĐÓNG/MỞ MENU KHI BẤM ICON
+Icon.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- 5. NÚT BẬT/TẮT AUTO CHEST
+ToggleChest.Parent = MainFrame
+ToggleChest.Position = UDim2.new(0.1, 0, 0.3, 0)
+ToggleChest.Size = UDim2.new(0.8, 0, 0, 30)
+ToggleChest.Text = "Auto Chest: OFF"
+ToggleChest.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+ToggleChest.TextColor3 = Color3.new(1,1,1)
+
+ToggleChest.MouseButton1Click:Connect(function()
+    _G.AutoChest = not _G.AutoChest
+    if _G.AutoChest then
+        ToggleChest.Text = "Auto Chest: ON"
+        ToggleChest.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+    else
+        ToggleChest.Text = "Auto Chest: OFF"
+        ToggleChest.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+    end
+end)
+
+-- 6. NÚT BẬT/TẮT SERVER HOP
+ToggleHop.Parent = MainFrame
+ToggleHop.Position = UDim2.new(0.1, 0, 0.6, 0)
+ToggleHop.Size = UDim2.new(0.8, 0, 0, 30)
+ToggleHop.Text = "Server Hop: OFF"
+ToggleHop.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+ToggleHop.TextColor3 = Color3.new(1,1,1)
+
+ToggleHop.MouseButton1Click:Connect(function()
+    _G.AutoHop = not _G.AutoHop
+    if _G.AutoHop then
+        ToggleHop.Text = "Server Hop: ON"
+        ToggleHop.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+    else
+        ToggleHop.Text = "Server Hop: OFF"
+        ToggleHop.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+    end
+end)
+
+-- 7. LOGIC NHẶT RƯƠNG (CHẠY NGẦM)
+spawn(function()
+    while task.wait() do
+        if _G.AutoChest then
+            local Chests = workspace:GetChildren()
+            local found = false
+            for _, v in pairs(Chests) do
+                if v.Name:find("Chest") and v:IsA("BasePart") then
+                    found = true
+                    pcall(function()
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+                        firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v, 0)
+                        firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v, 1)
+                        task.wait(0.1)
+                    end)
+                end
+            end
+            
+            if not found and _G.AutoHop then
+                -- Logic Server Hop khi hết rương
+                local Http = game:GetService("HttpService")
+                local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+                local Raw = game:HttpGet(Api)
+                local Data = Http:JSONDecode(Raw)
+                for _, server in pairs(Data.data) do
+                    if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, server.id)
+                        break
+                    end
+                end
+            end
+        end
+    end
+end)
